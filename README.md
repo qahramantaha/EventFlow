@@ -11,4 +11,4 @@ eye tracking app for shooting game
 
 
 IDEA PICKED - Party App
-Create a party app lets people hosting the venues & djs and book them,add friends to invite or set it to either public or private 
+Create a party app lets people hosting the venues & djs and book them, add friends to invite or set it to either public or private 
