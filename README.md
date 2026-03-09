@@ -19,12 +19,7 @@ The project is being developed as a mobile application using Flutter, allowing a
 
 Technologies used:
 
-Flutter (mobile app)
-
-Dart
-
-RESTful APIs
-
-MySQL
-
-GitHub for version control and collaboration
+Frontend: FLutter
+Backend: Node.js (Express)
+Database: MongoDB atlas
+Communication: REST API (HTTP)
