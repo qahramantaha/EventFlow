@@ -43,3 +43,21 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter build files
+frontend/build/
+frontend/.dart_tool/
+frontend/.packages
+
+# Flutter platform folders
+frontend/android/
+frontend/ios/
+frontend/windows/
+frontend/linux/
+frontend/macos/
+
+# Node
+backend/node_modules/
+
+# Environment variables
+backend/.env
