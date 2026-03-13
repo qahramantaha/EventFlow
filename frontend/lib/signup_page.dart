@@ -1,72 +1,74 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
-import 'login_page.dart';
 
 class SignupPage extends StatelessWidget {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-final TextEditingController nameController = TextEditingController();
-final TextEditingController emailController = TextEditingController();
-final TextEditingController passwordController = TextEditingController();
+  SignupPage({super.key});
 
-SignupPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Sign Up"),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: "Email"),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final result = await ApiService.signUp(
+                    nameController.text,
+                    emailController.text,
+                    passwordController.text,
+                  );
 
-@override
-Widget build(BuildContext context) {
-return Scaffold(
-appBar: AppBar(
-title: const Text("Sign Up"),
-),
-body: Padding(
-padding: const EdgeInsets.all(20),
-child: Column(
-children: [
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result["message"])),
+                  );
 
-  TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: "Name"),
+                  if (result["message"] == "User created successfully") {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Signup failed")),
+                  );
+                }
+              },
+              child: const Text("Sign Up"),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: const Text("Already have an account? Login"),
+            )
+          ],
         ),
-
-        TextField(
-          controller: emailController,
-          decoration: const InputDecoration(labelText: "Email"),
-        ),
-
-        TextField(
-          controller: passwordController,
-          decoration: const InputDecoration(labelText: "Password"),
-          obscureText: true,
-        ),
-
-        const SizedBox(height: 20),
-
-        ElevatedButton(
-  onPressed: () async {
-
-    final result = await ApiService.signUp(
-      nameController.text,
-      emailController.text,
-      passwordController.text,
+      ),
     );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result["message"]))
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-
-  },
-
-  child: const Text("Sign Up"),
-)
-
-      ],
-    ),
-  ),
-);
-
-
-}
+  }
 }
