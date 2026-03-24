@@ -20,6 +20,14 @@ const eventSchema = new mongoose.Schema({
   createdBy: {
     type: String,
     default: ""
+  },
+  latitude: {
+    type: Number,
+    required: true
+  },
+  longitude: {
+    type: Number,
+    required: true
   }
 }, { timestamps: true });
 

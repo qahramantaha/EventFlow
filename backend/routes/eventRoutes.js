@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Event = require("../models/Event");
 
-// Get all events
 router.get("/", async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
@@ -12,7 +11,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get one event
 router.get("/:id", async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -27,13 +25,22 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Create event
 router.post("/", async (req, res) => {
   try {
-    const { title, description, location, date, createdBy } = req.body;
+    const {
+      title,
+      description,
+      location,
+      date,
+      createdBy,
+      latitude,
+      longitude
+    } = req.body;
 
-    if (!title || !location || !date) {
-      return res.status(400).json({ message: "Title, location and date are required" });
+    if (!title || !location || !date || latitude == null || longitude == null) {
+      return res.status(400).json({
+        message: "Title, location, date, latitude and longitude are required"
+      });
     }
 
     const newEvent = new Event({
@@ -41,7 +48,9 @@ router.post("/", async (req, res) => {
       description,
       location,
       date,
-      createdBy
+      createdBy,
+      latitude,
+      longitude
     });
 
     await newEvent.save();
@@ -53,14 +62,21 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Update event
 router.put("/:id", async (req, res) => {
   try {
-    const { title, description, location, date, createdBy } = req.body;
+    const {
+      title,
+      description,
+      location,
+      date,
+      createdBy,
+      latitude,
+      longitude
+    } = req.body;
 
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      { title, description, location, date, createdBy },
+      { title, description, location, date, createdBy, latitude, longitude },
       { new: true }
     );
 
@@ -74,7 +90,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete event
 router.delete("/:id", async (req, res) => {
   try {
     const deletedEvent = await Event.findByIdAndDelete(req.params.id);

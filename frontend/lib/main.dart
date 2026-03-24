@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+
 import 'signup_page.dart';
 import 'login_page.dart';
 import 'home_page.dart';
@@ -6,6 +8,9 @@ import 'events_page.dart';
 import 'profile_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  const accessToken = String.fromEnvironment("MAPBOX_ACCESS_TOKEN");
+  MapboxOptions.setAccessToken(accessToken);
   runApp(const MyApp());
 }
 
