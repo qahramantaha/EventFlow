@@ -1,30 +1,33 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
+const eventRoutes = require('./routes/eventRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/users", require("./routes/userRoutes"));
-app.use("/api/events", require("./routes/eventRoutes"));
-
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB connected");
+    console.log('MongoDB connected');
   })
-  .catch((err) => {
-    console.log(err);
+  .catch((error) => {
+    console.log('MongoDB connection error:', error);
   });
 
-app.get("/", (req, res) => {
-  res.send("API is running");
+app.get('/test-server', (req, res) => {
+  console.log('TEST SERVER HIT');
+  res.json({ message: 'THIS IS MY REAL BACKEND' });
 });
 
-const PORT = 5000;
+app.use('/api/events', eventRoutes);
+app.use('/api/users', userRoutes);
 
-app.listen(PORT, () => {
-  console.log("Server running on port 5000");
+app.listen(5000, () => {
+  console.log('Server running on port 5000');
 });

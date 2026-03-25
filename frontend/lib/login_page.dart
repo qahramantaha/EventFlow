@@ -43,14 +43,24 @@ class LoginPage extends StatelessWidget {
                   );
 
                   if (result["message"] == "Login successful") {
-                    UserSession.email = result["user"]["email"];
-                    UserSession.name = result["user"]["name"];
+  final user = result["user"] ?? {};
 
-                    Navigator.pushReplacementNamed(context, '/home');
-                  }
+  UserSession.id = user["_id"] ?? user["id"] ?? "";
+  UserSession.email = user["email"] ?? "";
+  UserSession.name = user["name"] ?? "";
+
+  print("Saved user id: ${UserSession.id}");
+
+  Navigator.pushReplacementNamed(context, '/home');
+}
                 } catch (e) {
+                  String errorMsg = e.toString();
+                  if (errorMsg.startsWith("Exception: ")) {
+                    errorMsg = errorMsg.substring(11);
+                  }
+                  print("Login error caught: $e");
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Login failed")),
+                    SnackBar(content: Text(errorMsg)),
                   );
                 }
               },

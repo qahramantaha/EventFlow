@@ -52,8 +52,13 @@ class SignupPage extends StatelessWidget {
                     Navigator.pushReplacementNamed(context, '/login');
                   }
                 } catch (e) {
+                  String errorMsg = e.toString();
+                  if (errorMsg.startsWith("Exception: ")) {
+                    errorMsg = errorMsg.substring(11);
+                  }
+                  print("Signup error caught: $e");
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Signup failed")),
+                    SnackBar(content: Text(errorMsg)),
                   );
                 }
               },

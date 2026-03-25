@@ -1,95 +1,192 @@
 import 'package:flutter/material.dart';
+import 'models/event_models.dart';
+import 'services/event_services.dart';
 import 'event_details_page.dart';
-import 'home_page.dart';
-import 'profile_page.dart';
 
-class EventsPage extends StatelessWidget {
+class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
 
-  void goToPage(BuildContext context, int index) {
-    if (index == 0) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
-    } else if (index == 1) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const EventsPage()),
-      );
-    } else if (index == 2) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilePage()),
-      );
+  @override
+  State<EventsPage> createState() => _EventsPageState();
+}
+
+class _EventsPageState extends State<EventsPage> {
+  List<EventModel> allEvents = [];
+  List<EventModel> filteredEvents = [];
+  bool isLoading = true;
+  TextEditingController searchController = TextEditingController();
+
+  Future<void> loadEvents() async {
+    try {
+      final events = await EventService.getEvents();
+      setState(() {
+        allEvents = events;
+        filteredEvents = events;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadEvents();
+  }
+
+  void filterEvents(String value) {
+    setState(() {
+      filteredEvents = allEvents.where((event) {
+        return event.title.toLowerCase().contains(value.toLowerCase());
+      }).toList();
+    });
+  }
+
+  Color getCategoryColor(String category) {
+    if (category == 'SOCIAL') return Colors.deepPurple;
+    if (category == 'SPORTS') return Colors.green;
+    if (category == 'ACADEMIC') return Colors.blue;
+    if (category == 'CAREERS') return Colors.orange;
+    return Colors.grey;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F3F5),
       appBar: AppBar(
-        title: const Text("Events"),
-        centerTitle: true,
+        backgroundColor: const Color(0xFF005F89),
+        title: const Text(
+          'Events',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
-      body: ListView(
-        children: [
-          ListTile(
-            title: const Text("Career Fair"),
-            subtitle: const Text("ATU Galway"),
-            trailing: const Icon(Icons.arrow_forward),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EventDetailsPage(
-                    title: "Career Fair",
-                    location: "ATU Galway",
-                    description: "A career fair for students to meet employers.",
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: filterEvents,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Search events...',
+                      ),
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            title: const Text("Tech Workshop"),
-            subtitle: const Text("Room B12"),
-            trailing: const Icon(Icons.arrow_forward),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EventDetailsPage(
-                    title: "Tech Workshop",
-                    location: "Room B12",
-                    description: "A workshop on software and development skills.",
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filteredEvents.length,
+                      itemBuilder: (context, index) {
+                        final event = filteredEvents[index];
+
+                        return GestureDetector(
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EventDetailsPage(
+                                  eventId: event.id,
+                                ),
+                              ),
+                            );
+                            loadEvents();
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: getCategoryColor(event.category),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        event.category,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      '${event.goingCount} going',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  event.title,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1F2D3D),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '${event.date} at ${event.time}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF2F80B7),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  event.location,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        onTap: (index) {
-          goToPage(context, index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: "Events",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
-        ],
-      ),
+                ],
+              ),
+            ),
     );
   }
 }

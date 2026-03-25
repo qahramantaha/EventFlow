@@ -1,106 +1,144 @@
-const express = require("express");
-const router = express.Router();
-const Event = require("../models/Event");
+const express = require('express');
+const mongoose = require('mongoose');
+const Event = require('../models/Event');
 
-router.get("/", async (req, res) => {
+const router = express.Router();
+
+// Replace this with your real auth middleware later
+const fakeAuth = (req, res, next) => {
+  const userId = req.header('userId');
+
+  if (!userId) {
+    return res.status(401).json({ message: 'No userId provided' });
+  }
+
+  req.user = { id: userId };
+  next();
+};
+
+// Get all events
+router.get('/', async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
-    res.status(200).json(events);
+
+    const formattedEvents = events.map((event) => ({
+      _id: event._id,
+      title: event.title,
+      organiser: event.organiser,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      goingCount: event.attendees.length,
+    }));
+
+    res.json(formattedEvents);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching events" });
+    console.error('Get events error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.get("/:id", async (req, res) => {
+// Get one event
+router.get('/:id', fakeAuth, async (req, res) => {
+  try {
+    console.log('params id:', req.params.id);
+    console.log('header userId:', req.user.id);
+
+    const event = await Event.findById(req.params.id).populate('attendees', 'name email');
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const userId = req.user.id;
+
+    const isGoing = event.attendees.some(
+      (attendee) => attendee._id.toString() === userId
+    );
+
+    res.json({
+      _id: event._id,
+      title: event.title,
+      organiser: event.organiser,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      goingCount: event.attendees.length,
+      isGoing: isGoing,
+      attendees: event.attendees.map((attendee) => ({
+        _id: attendee._id,
+        name: attendee.name,
+        email: attendee.email
+      }))
+    });
+  } catch (error) {
+    console.log('Get event details error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// RSVP to event
+router.post('/:id/rsvp', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    res.status(200).json(event);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching event" });
-  }
-});
+    const userId = req.user.id;
 
-router.post("/", async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      location,
-      date,
-      createdBy,
-      latitude,
-      longitude
-    } = req.body;
-
-    if (!title || !location || !date || latitude == null || longitude == null) {
-      return res.status(400).json({
-        message: "Title, location, date, latitude and longitude are required"
-      });
-    }
-
-    const newEvent = new Event({
-      title,
-      description,
-      location,
-      date,
-      createdBy,
-      latitude,
-      longitude
-    });
-
-    await newEvent.save();
-
-    res.status(201).json(newEvent);
-  } catch (error) {
-    console.log("Create event error:", error);
-    res.status(500).json({ message: "Error creating event" });
-  }
-});
-
-router.put("/:id", async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      location,
-      date,
-      createdBy,
-      latitude,
-      longitude
-    } = req.body;
-
-    const updatedEvent = await Event.findByIdAndUpdate(
-      req.params.id,
-      { title, description, location, date, createdBy, latitude, longitude },
-      { new: true }
+    const alreadyGoing = event.attendees.some(
+      (attendeeId) => attendeeId.toString() === userId
     );
 
-    if (!updatedEvent) {
-      return res.status(404).json({ message: "Event not found" });
+    if (alreadyGoing) {
+      return res.status(400).json({ message: 'User already RSVP’d' });
     }
 
-    res.status(200).json(updatedEvent);
+    event.attendees.push(new mongoose.Types.ObjectId(userId));
+    await event.save();
+
+    res.json({
+      message: 'RSVP successful',
+      goingCount: event.attendees.length,
+      isGoing: true,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error updating event" });
+    console.error('RSVP error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.delete("/:id", async (req, res) => {
+// Cancel RSVP
+router.delete('/:id/rsvp', fakeAuth, async (req, res) => {
   try {
-    const deletedEvent = await Event.findByIdAndDelete(req.params.id);
+    const event = await Event.findById(req.params.id);
 
-    if (!deletedEvent) {
-      return res.status(404).json({ message: "Event not found" });
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    res.status(200).json({ message: "Event deleted successfully" });
+    const userId = req.user.id;
+
+    event.attendees = event.attendees.filter(
+      (attendeeId) => attendeeId.toString() !== userId
+    );
+
+    await event.save();
+
+    res.json({
+      message: 'RSVP cancelled',
+      goingCount: event.attendees.length,
+      isGoing: false,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting event" });
+    console.error('Cancel RSVP error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
