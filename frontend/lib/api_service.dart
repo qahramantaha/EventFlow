@@ -75,13 +75,26 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getProfile(String email) async {
+  try {
     final response = await http.get(
       Uri.parse("$baseUrl/profile/$email"),
       headers: {"Content-Type": "application/json"},
     );
 
-    return jsonDecode(response.body);
+    print("Get profile status: ${response.statusCode}");
+    print("Get profile body: ${response.body}");
+
+    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return responseData;
+    } else {
+      throw Exception(responseData["message"] ?? "Failed to load profile");
+    }
+  } catch (e) {
+    throw Exception("Get profile error: $e");
   }
+}
 
   static Future<Map<String, dynamic>> updateProfile(
     String email,

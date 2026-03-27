@@ -3,9 +3,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'signup_page.dart';
 import 'login_page.dart';
-import 'home_page.dart';
-import 'events_page.dart';
-import 'profile_page.dart';
+import 'main_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,9 +24,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/signup': (context) => SignupPage(),
         '/login': (context) => LoginPage(),
-        '/home': (context) => const HomePage(),
-        '/events': (context) => const EventsPage(),
-        '/profile': (context) => const ProfilePage(),
+        '/home': (context) => const MainPage(),
       },
     );
   }

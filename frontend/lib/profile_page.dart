@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
-import 'events_page.dart';
 import 'api_service.dart';
 import 'user_session.dart';
 
@@ -40,21 +38,46 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String formatDate(String dateText) {
+  try {
     DateTime date = DateTime.parse(dateText);
     return "${date.day}/${date.month}/${date.year}";
+  } catch (e) {
+    return "";
   }
+}
 
   Future<void> loadProfile() async {
+  print("UserSession.email: ${UserSession.email}");
+
+  if (UserSession.email.isEmpty) {
+    print("UserSession.email is empty");
+    return;
+  }
+
+  try {
     final result = await ApiService.getProfile(UserSession.email);
+    print("Profile API result: $result");
+
+    if (!mounted) return;
 
     setState(() {
-      name = result["name"];
-      email = result["email"];
-      description = result["description"] ?? "";
-      memberSince = formatDate(result["createdAt"]);
+      name = (result["name"] ?? "").toString();
+      email = (result["email"] ?? "").toString();
+      description = (result["description"] ?? "").toString();
+
+      if (result["createdAt"] != null &&
+          result["createdAt"].toString().isNotEmpty) {
+        memberSince = formatDate(result["createdAt"].toString());
+      } else {
+        memberSince = "Not available";
+      }
+
       descriptionController.text = description;
     });
+  } catch (e) {
+    print("Load profile error: $e");
   }
+}
 
   Future<void> saveDescription() async {
     final result = await ApiService.updateProfile(
@@ -72,29 +95,16 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  void goToPage(BuildContext context, int index) {
-    if (index == 0) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
-    } else if (index == 1) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const EventsPage()),
-      );
-    } else if (index == 2) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilePage()),
-      );
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     loadProfile();
+  }
+
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -107,6 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Profile"),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -236,7 +247,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           actions: [
                             TextButton(
                               onPressed: () {
-                                Navigator.pop(context); // close popup
+                                Navigator.pop(context);
                               },
                               child: const Text("Cancel"),
                             ),
@@ -245,8 +256,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 UserSession.email = "";
                                 UserSession.name = "";
 
-                                Navigator.pop(context); // close popup
-
+                                Navigator.pop(context);
                                 Navigator.pushReplacementNamed(context, '/login');
                               },
                               style: ElevatedButton.styleFrom(
@@ -270,26 +280,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        onTap: (index) {
-          goToPage(context, index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: "Events",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
-        ],
       ),
     );
   }
