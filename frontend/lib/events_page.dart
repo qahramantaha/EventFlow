@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'event_details_page.dart';
+import 'create_event_page.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -19,12 +20,17 @@ class _EventsPageState extends State<EventsPage> {
   Future<void> loadEvents() async {
     try {
       final events = await EventService.getEvents();
+
+      if (!mounted) return;
+
       setState(() {
         allEvents = events;
         filteredEvents = events;
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         isLoading = false;
       });
@@ -35,6 +41,12 @@ class _EventsPageState extends State<EventsPage> {
   void initState() {
     super.initState();
     loadEvents();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   void filterEvents(String value) {
@@ -61,8 +73,26 @@ class _EventsPageState extends State<EventsPage> {
         backgroundColor: const Color(0xFF005F89),
         title: const Text(
           'Events',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateEventPage(),
+                ),
+              );
+              loadEvents();
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -88,101 +118,108 @@ class _EventsPageState extends State<EventsPage> {
                   ),
                   const SizedBox(height: 14),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: filteredEvents.length,
-                      itemBuilder: (context, index) {
-                        final event = filteredEvents[index];
-
-                        return GestureDetector(
-                          onTap: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => EventDetailsPage(
-                                  eventId: event.id,
-                                ),
-                              ),
-                            );
-                            loadEvents();
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.12),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                    child: filteredEvents.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No events found',
+                              style: TextStyle(fontSize: 16),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
+                          )
+                        : ListView.builder(
+                            itemCount: filteredEvents.length,
+                            itemBuilder: (context, index) {
+                              final event = filteredEvents[index];
+
+                              return GestureDetector(
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EventDetailsPage(
+                                        eventId: event.id,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: getCategoryColor(event.category),
-                                        borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  );
+                                  loadEvents();
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 14),
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.12),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 3),
                                       ),
-                                      child: Text(
-                                        event.category,
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: getCategoryColor(event.category),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              event.category,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            '${event.goingCount} going',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        event.title,
                                         style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1F2D3D),
                                         ),
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      '${event.goingCount} going',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 15,
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${event.date} at ${event.time}',
+                                        style: const TextStyle(
+                                          color: Color(0xFF2F80B7),
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  event.title,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1F2D3D),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        event.location,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '${event.date} at ${event.time}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF2F80B7),
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  event.location,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

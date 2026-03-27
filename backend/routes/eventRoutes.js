@@ -16,6 +16,54 @@ const fakeAuth = (req, res, next) => {
   next();
 };
 
+// Create event
+router.post('/create', async (req, res) => {
+  try {
+    const {
+      title,
+      organiser,
+      description,
+      date,
+      time,
+      location,
+      category
+    } = req.body;
+
+    if (
+      !title ||
+      !organiser ||
+      !description ||
+      !date ||
+      !time ||
+      !location ||
+      !category
+    ) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+
+    const newEvent = new Event({
+      title,
+      organiser,
+      description,
+      date,
+      time,
+      location,
+      category,
+      attendees: []
+    });
+
+    await newEvent.save();
+
+    res.status(201).json({
+      message: 'Event created successfully',
+      event: newEvent
+    });
+  } catch (error) {
+    console.error('Create event error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get all events
 router.get('/', async (req, res) => {
   try {

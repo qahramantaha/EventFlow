@@ -9,15 +9,10 @@ class EventService {
     final response = await http.get(Uri.parse(baseUrl));
 
     if (response.statusCode == 200) {
-      List data = jsonDecode(response.body);
-      return data.map((event) => EventModel.fromJson(event)).toList();
+      final data = jsonDecode(response.body);
+      return (data as List).map((event) => EventModel.fromJson(event)).toList();
     } else {
-      var error = 'Failed to load events';
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['message'] != null) error = body['message'];
-      } catch (_) {}
-      throw Exception(error);
+      throw Exception('Failed to load events');
     }
   }
 
@@ -30,14 +25,10 @@ class EventService {
     );
 
     if (response.statusCode == 200) {
-      return EventModel.fromJson(jsonDecode(response.body));
+      final data = jsonDecode(response.body);
+      return EventModel.fromJson(data);
     } else {
-      var error = 'Failed to load event details';
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['message'] != null) error = body['message'];
-      } catch (_) {}
-      throw Exception(error);
+      throw Exception('Failed to load event details');
     }
   }
 
@@ -51,12 +42,7 @@ class EventService {
     );
 
     if (response.statusCode != 200) {
-      var error = 'Failed to RSVP';
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['message'] != null) error = body['message'];
-      } catch (_) {}
-      throw Exception(error);
+      throw Exception('Failed to RSVP');
     }
   }
 
@@ -70,12 +56,37 @@ class EventService {
     );
 
     if (response.statusCode != 200) {
-      var error = 'Failed to cancel RSVP';
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['message'] != null) error = body['message'];
-      } catch (_) {}
-      throw Exception(error);
+      throw Exception('Failed to cancel RSVP');
+    }
+  }
+
+  static Future<void> createEvent(
+    String title,
+    String description,
+    String date,
+    String time,
+    String location,
+    String category,
+    String organiser,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/create'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'date': date,
+        'time': time,
+        'location': location,
+        'category': category,
+        'organiser': organiser,
+      }),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Failed to create event');
     }
   }
 }
