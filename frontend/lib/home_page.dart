@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'map_page.dart';
+import 'events_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,7 +38,12 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EventsPage()),
+                );
+              },
               child: const Text("View Events"),
             ),
             const SizedBox(height: 10),
