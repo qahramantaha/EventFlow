@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'user_session.dart';
 import 'services/event_services.dart';
 
 class CreateEventPage extends StatefulWidget {
@@ -49,6 +50,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
         selectedCategory,
         organiserController.text.trim(),
         isPrivate,
+        UserSession.id,
       );
 
       if (!mounted) return;

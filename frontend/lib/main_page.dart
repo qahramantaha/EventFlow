@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'events_page.dart';
+import 'friends_page.dart';
 import 'profile_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -16,6 +17,7 @@ class MainPageState extends State<MainPage> {
   final List<Widget> pages = [
     const HomePage(),
     const EventsPage(),
+    const FriendsPage(),
     const ProfilePage(),
   ];
 
@@ -32,6 +34,9 @@ class MainPageState extends State<MainPage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         onTap: goToPage,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF005F89),
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -40,6 +45,10 @@ class MainPageState extends State<MainPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.event),
             label: "Events",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: "Friends",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

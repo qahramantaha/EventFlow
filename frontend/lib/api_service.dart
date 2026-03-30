@@ -75,26 +75,26 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getProfile(String email) async {
-  try {
-    final response = await http.get(
-      Uri.parse("$baseUrl/profile/$email"),
-      headers: {"Content-Type": "application/json"},
-    );
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/profile/$email"),
+        headers: {"Content-Type": "application/json"},
+      );
 
-    print("Get profile status: ${response.statusCode}");
-    print("Get profile body: ${response.body}");
+      print("Get profile status: ${response.statusCode}");
+      print("Get profile body: ${response.body}");
 
-    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return responseData;
-    } else {
-      throw Exception(responseData["message"] ?? "Failed to load profile");
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return responseData;
+      } else {
+        throw Exception(responseData["message"] ?? "Failed to load profile");
+      }
+    } catch (e) {
+      throw Exception("Get profile error: $e");
     }
-  } catch (e) {
-    throw Exception("Get profile error: $e");
   }
-}
 
   static Future<Map<String, dynamic>> updateProfile(
     String email,
@@ -105,6 +105,63 @@ class ApiService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "description": description,
+      }),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> getFriends(String userId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/friends/$userId"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> sendFriendRequest(
+    String fromUserId,
+    String toUserId,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/send-request"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "fromUserId": fromUserId,
+        "toUserId": toUserId,
+      }),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> acceptFriendRequest(
+    String userId,
+    String requestUserId,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/accept-request"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": userId,
+        "requestUserId": requestUserId,
+      }),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> rejectFriendRequest(
+    String userId,
+    String requestUserId,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/reject-request"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": userId,
+        "requestUserId": requestUserId,
       }),
     );
 

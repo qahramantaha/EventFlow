@@ -3,6 +3,7 @@ import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'event_details_page.dart';
 import 'create_event_page.dart';
+import 'user_session.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -19,7 +20,7 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> loadEvents() async {
     try {
-      final events = await EventService.getEvents();
+      final events = await EventService.getEvents(UserSession.id);
 
       if (!mounted) return;
 
