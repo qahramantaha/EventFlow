@@ -35,10 +35,9 @@ const eventSchema = new mongoose.Schema(
       default: false,
     },
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User',
+},
     attendees: [
       {
         type: mongoose.Schema.Types.ObjectId,

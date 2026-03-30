@@ -172,29 +172,41 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
 });
 
 // Cancel RSVP
-router.delete('/:id/rsvp', fakeAuth, async (req, res) => {
+router.post('/:id/rsvp', fakeAuth, async (req, res) => {
   try {
+    console.log('RSVP event id:', req.params.id);
+    console.log('RSVP user id:', req.user.id);
+
     const event = await Event.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    console.log('Attendees before:', event.attendees);
+
     const userId = req.user.id;
 
-    event.attendees = event.attendees.filter(
-      (attendeeId) => attendeeId.toString() !== userId
+    const alreadyGoing = event.attendees.some(
+      (attendeeId) => attendeeId.toString() === userId
     );
 
+    if (alreadyGoing) {
+      return res.status(400).json({ message: 'User already RSVP\'d' });
+    }
+
+    event.attendees.push(new mongoose.Types.ObjectId(userId));
     await event.save();
 
+    console.log('Attendees after:', event.attendees);
+
     res.json({
-      message: 'RSVP cancelled',
+      message: 'RSVP successful',
       goingCount: event.attendees.length,
-      isGoing: false,
+      isGoing: true,
     });
   } catch (error) {
-    console.error('Cancel RSVP error:', error);
+    console.error('RSVP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
