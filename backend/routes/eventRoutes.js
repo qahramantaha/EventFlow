@@ -4,7 +4,6 @@ const Event = require('../models/Event');
 
 const router = express.Router();
 
-// Replace this with your real auth middleware later
 const fakeAuth = (req, res, next) => {
   const userId = req.header('userId');
 
@@ -26,7 +25,8 @@ router.post('/create', async (req, res) => {
       date,
       time,
       location,
-      category
+      category,
+      isPrivate,
     } = req.body;
 
     if (
@@ -49,14 +49,15 @@ router.post('/create', async (req, res) => {
       time,
       location,
       category,
-      attendees: []
+      isPrivate: isPrivate ?? false,
+      attendees: [],
     });
 
     await newEvent.save();
 
     res.status(201).json({
       message: 'Event created successfully',
-      event: newEvent
+      event: newEvent,
     });
   } catch (error) {
     console.error('Create event error:', error);
@@ -67,7 +68,7 @@ router.post('/create', async (req, res) => {
 // Get all events
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.find({ isPrivate: false }).sort({ createdAt: -1 });
 
     const formattedEvents = events.map((event) => ({
       _id: event._id,
@@ -78,6 +79,7 @@ router.get('/', async (req, res) => {
       time: event.time,
       location: event.location,
       category: event.category,
+      isPrivate: event.isPrivate,
       goingCount: event.attendees.length,
     }));
 
@@ -91,9 +93,6 @@ router.get('/', async (req, res) => {
 // Get one event
 router.get('/:id', fakeAuth, async (req, res) => {
   try {
-    console.log('params id:', req.params.id);
-    console.log('header userId:', req.user.id);
-
     const event = await Event.findById(req.params.id).populate('attendees', 'name email');
 
     if (!event) {
@@ -115,13 +114,14 @@ router.get('/:id', fakeAuth, async (req, res) => {
       time: event.time,
       location: event.location,
       category: event.category,
+      isPrivate: event.isPrivate,
       goingCount: event.attendees.length,
       isGoing: isGoing,
       attendees: event.attendees.map((attendee) => ({
         _id: attendee._id,
         name: attendee.name,
-        email: attendee.email
-      }))
+        email: attendee.email,
+      })),
     });
   } catch (error) {
     console.log('Get event details error:', error);
@@ -145,7 +145,7 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
     );
 
     if (alreadyGoing) {
-      return res.status(400).json({ message: 'User already RSVP’d' });
+      return res.status(400).json({ message: 'User already RSVP\'d' });
     }
 
     event.attendees.push(new mongoose.Types.ObjectId(userId));

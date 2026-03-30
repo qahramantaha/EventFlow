@@ -18,6 +18,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
   String selectedCategory = 'SOCIAL';
   bool isLoading = false;
+  bool isPrivate = false;
 
   Future<void> createEvent() async {
     if (titleController.text.trim().isEmpty ||
@@ -47,6 +48,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
         locationController.text.trim(),
         selectedCategory,
         organiserController.text.trim(),
+        isPrivate,
       );
 
       if (!mounted) return;
@@ -138,7 +140,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -148,22 +150,10 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 child: DropdownButton<String>(
                   value: selectedCategory,
                   items: const [
-                    DropdownMenuItem(
-                      value: 'SOCIAL',
-                      child: Text('SOCIAL'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'SPORTS',
-                      child: Text('SPORTS'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'ACADEMIC',
-                      child: Text('ACADEMIC'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'CAREERS',
-                      child: Text('CAREERS'),
-                    ),
+                    DropdownMenuItem(value: 'SOCIAL', child: Text('SOCIAL')),
+                    DropdownMenuItem(value: 'SPORTS', child: Text('SPORTS')),
+                    DropdownMenuItem(value: 'ACADEMIC', child: Text('ACADEMIC')),
+                    DropdownMenuItem(value: 'CAREERS', child: Text('CAREERS')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -171,6 +161,43 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     });
                   },
                 ),
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isPrivate ? Icons.lock : Icons.public,
+                        color: isPrivate ? Colors.red : Colors.green,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isPrivate ? 'Private Event' : 'Public Event',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: isPrivate,
+                    activeColor: const Color(0xFF005F89),
+                    onChanged: (value) {
+                      setState(() {
+                        isPrivate = value;
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
             SizedBox(

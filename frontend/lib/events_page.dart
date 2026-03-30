@@ -49,10 +49,12 @@ class _EventsPageState extends State<EventsPage> {
     super.dispose();
   }
 
-  void filterEvents(String value) {
+ void filterEvents(String value) {
     setState(() {
       filteredEvents = allEvents.where((event) {
-        return event.title.toLowerCase().contains(value.toLowerCase());
+        return event.title.toLowerCase().contains(value.toLowerCase()) ||
+               event.location.toLowerCase().contains(value.toLowerCase()) ||
+               event.category.toLowerCase().contains(value.toLowerCase());
       }).toList();
     });
   }
