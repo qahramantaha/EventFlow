@@ -16,7 +16,7 @@ const fakeAuth = (req, res, next) => {
 };
 
 // Create event
-router.post('/create', async (req, res) => {
+router.post('/create', fakeAuth, async (req, res) => {
   try {
     const {
       title,
@@ -50,6 +50,7 @@ router.post('/create', async (req, res) => {
       location,
       category,
       isPrivate: isPrivate ?? false,
+      createdBy: req.user.id,
       attendees: [],
     });
 
@@ -65,10 +66,18 @@ router.post('/create', async (req, res) => {
   }
 });
 
+
 // Get all events
-router.get('/', async (req, res) => {
+router.get('/', fakeAuth, async (req, res) => {
   try {
-    const events = await Event.find({ isPrivate: false }).sort({ createdAt: -1 });
+    const userId = req.user.id;
+
+    const events = await Event.find({
+      $or: [
+        { isPrivate: false },
+        { isPrivate: true, createdBy: userId }
+      ]
+    }).sort({ createdAt: -1 });
 
     const formattedEvents = events.map((event) => ({
       _id: event._id,
