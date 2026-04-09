@@ -17,6 +17,7 @@ class _EventsPageState extends State<EventsPage> {
   List<EventModel> filteredEvents = [];
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
+  String selectedCategory = 'ALL';
 
   Future<void> loadEvents() async {
     try {
@@ -50,12 +51,36 @@ class _EventsPageState extends State<EventsPage> {
     super.dispose();
   }
 
- void filterEvents(String value) {
+  void filterEvents(String value) {
     setState(() {
       filteredEvents = allEvents.where((event) {
-        return event.title.toLowerCase().contains(value.toLowerCase()) ||
-               event.location.toLowerCase().contains(value.toLowerCase()) ||
-               event.category.toLowerCase().contains(value.toLowerCase());
+        final matchesSearch =
+            event.title.toLowerCase().contains(value.toLowerCase()) ||
+            event.location.toLowerCase().contains(value.toLowerCase()) ||
+            event.category.toLowerCase().contains(value.toLowerCase());
+        final matchesCategory =
+            selectedCategory == 'ALL' || event.category == selectedCategory;
+        return matchesSearch && matchesCategory;
+      }).toList();
+    });
+  }
+
+  void filterByCategory(String category) {
+    setState(() {
+      selectedCategory = category;
+      filteredEvents = allEvents.where((event) {
+        final matchesSearch = event.title
+                .toLowerCase()
+                .contains(searchController.text.toLowerCase()) ||
+            event.location
+                .toLowerCase()
+                .contains(searchController.text.toLowerCase()) ||
+            event.category
+                .toLowerCase()
+                .contains(searchController.text.toLowerCase());
+        final matchesCategory =
+            category == 'ALL' || event.category == category;
+        return matchesSearch && matchesCategory;
       }).toList();
     });
   }
@@ -119,6 +144,50 @@ class _EventsPageState extends State<EventsPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        'ALL',
+                        'SOCIAL',
+                        'SPORTS',
+                        'ACADEMIC',
+                        'CAREERS',
+                      ].map((category) {
+                        final isSelected = selectedCategory == category;
+                        return GestureDetector(
+                          onTap: () => filterByCategory(category),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF005F89)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFF005F89),
+                              ),
+                            ),
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF005F89),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   Expanded(
                     child: filteredEvents.isEmpty
@@ -153,14 +222,16 @@ class _EventsPageState extends State<EventsPage> {
                                     borderRadius: BorderRadius.circular(14),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
+                                        color:
+                                            Colors.black.withOpacity(0.12),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -170,8 +241,10 @@ class _EventsPageState extends State<EventsPage> {
                                               vertical: 5,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: getCategoryColor(event.category),
-                                              borderRadius: BorderRadius.circular(20),
+                                              color: getCategoryColor(
+                                                  event.category),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             child: Text(
                                               event.category,
