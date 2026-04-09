@@ -30,6 +30,10 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isPrivate: {
+      type: Boolean,
+      default: false,
+    },
     attendees: [
       {
         type: mongoose.Schema.Types.ObjectId,

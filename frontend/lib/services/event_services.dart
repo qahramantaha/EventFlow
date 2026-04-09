@@ -68,6 +68,7 @@ class EventService {
     String location,
     String category,
     String organiser,
+    bool isPrivate,
   ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/create'),
@@ -82,6 +83,7 @@ class EventService {
         'location': location,
         'category': category,
         'organiser': organiser,
+        'isPrivate': isPrivate,
       }),
     );
 
