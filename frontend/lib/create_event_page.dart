@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'user_session.dart';
 import 'services/event_services.dart';
 
 class CreateEventPage extends StatefulWidget {
@@ -28,7 +29,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
         locationController.text.trim().isEmpty ||
         organiserController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(
+          content: Text('Please fill in all fields'),
+        ),
       );
       return;
     }
@@ -47,12 +50,15 @@ class _CreateEventPageState extends State<CreateEventPage> {
         selectedCategory,
         organiserController.text.trim(),
         isPrivate,
+        UserSession.id,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event created successfully')),
+        const SnackBar(
+          content: Text('Event created successfully'),
+        ),
       );
 
       Navigator.pop(context);
@@ -60,7 +66,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create event')),
+        const SnackBar(
+          content: Text('Failed to create event'),
+        ),
       );
     }
 

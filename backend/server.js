@@ -5,11 +5,15 @@ require('dotenv').config();
 
 const eventRoutes = require('./routes/eventRoutes');
 const userRoutes = require('./routes/userRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/users", userRoutes);
+app.use('/api/messages', messageRoutes);
+
 
 mongoose
   .connect(process.env.MONGO_URI)

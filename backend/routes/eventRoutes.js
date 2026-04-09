@@ -4,7 +4,6 @@ const Event = require('../models/Event');
 
 const router = express.Router();
 
-// Replace this with your real auth middleware later
 const fakeAuth = (req, res, next) => {
   const userId = req.header('userId');
 
@@ -17,7 +16,7 @@ const fakeAuth = (req, res, next) => {
 };
 
 // Create event
-router.post('/create', async (req, res) => {
+router.post('/create', fakeAuth, async (req, res) => {
   try {
     const {
       title,
@@ -26,7 +25,8 @@ router.post('/create', async (req, res) => {
       date,
       time,
       location,
-      category
+      category,
+      isPrivate,
     } = req.body;
 
     if (
@@ -49,14 +49,16 @@ router.post('/create', async (req, res) => {
       time,
       location,
       category,
-      attendees: []
+      isPrivate: isPrivate ?? false,
+      createdBy: req.user.id,
+      attendees: [],
     });
 
     await newEvent.save();
 
     res.status(201).json({
       message: 'Event created successfully',
-      event: newEvent
+      event: newEvent,
     });
   } catch (error) {
     console.error('Create event error:', error);
@@ -64,10 +66,18 @@ router.post('/create', async (req, res) => {
   }
 });
 
+
 // Get all events
-router.get('/', async (req, res) => {
+router.get('/', fakeAuth, async (req, res) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 });
+    const userId = req.user.id;
+
+    const events = await Event.find({
+      $or: [
+        { isPrivate: false },
+        { isPrivate: true, createdBy: userId }
+      ]
+    }).sort({ createdAt: -1 });
 
     const formattedEvents = events.map((event) => ({
       _id: event._id,
@@ -78,6 +88,7 @@ router.get('/', async (req, res) => {
       time: event.time,
       location: event.location,
       category: event.category,
+      isPrivate: event.isPrivate,
       goingCount: event.attendees.length,
     }));
 
@@ -91,9 +102,6 @@ router.get('/', async (req, res) => {
 // Get one event
 router.get('/:id', fakeAuth, async (req, res) => {
   try {
-    console.log('params id:', req.params.id);
-    console.log('header userId:', req.user.id);
-
     const event = await Event.findById(req.params.id).populate('attendees', 'name email');
 
     if (!event) {
@@ -115,13 +123,14 @@ router.get('/:id', fakeAuth, async (req, res) => {
       time: event.time,
       location: event.location,
       category: event.category,
+      isPrivate: event.isPrivate,
       goingCount: event.attendees.length,
       isGoing: isGoing,
       attendees: event.attendees.map((attendee) => ({
         _id: attendee._id,
         name: attendee.name,
-        email: attendee.email
-      }))
+        email: attendee.email,
+      })),
     });
   } catch (error) {
     console.log('Get event details error:', error);
@@ -145,7 +154,7 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
     );
 
     if (alreadyGoing) {
-      return res.status(400).json({ message: 'User already RSVP’d' });
+      return res.status(400).json({ message: 'User already RSVP\'d' });
     }
 
     event.attendees.push(new mongoose.Types.ObjectId(userId));
@@ -163,29 +172,41 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
 });
 
 // Cancel RSVP
-router.delete('/:id/rsvp', fakeAuth, async (req, res) => {
+router.post('/:id/rsvp', fakeAuth, async (req, res) => {
   try {
+    console.log('RSVP event id:', req.params.id);
+    console.log('RSVP user id:', req.user.id);
+
     const event = await Event.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    console.log('Attendees before:', event.attendees);
+
     const userId = req.user.id;
 
-    event.attendees = event.attendees.filter(
-      (attendeeId) => attendeeId.toString() !== userId
+    const alreadyGoing = event.attendees.some(
+      (attendeeId) => attendeeId.toString() === userId
     );
 
+    if (alreadyGoing) {
+      return res.status(400).json({ message: 'User already RSVP\'d' });
+    }
+
+    event.attendees.push(new mongoose.Types.ObjectId(userId));
     await event.save();
 
+    console.log('Attendees after:', event.attendees);
+
     res.json({
-      message: 'RSVP cancelled',
+      message: 'RSVP successful',
       goingCount: event.attendees.length,
-      isGoing: false,
+      isGoing: true,
     });
   } catch (error) {
-    console.error('Cancel RSVP error:', error);
+    console.error('RSVP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'user_session.dart';
+import 'api_service.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final String eventId;
@@ -102,6 +103,16 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         await loadEventDetails();
       }
     }
+  }
+
+  Future<void> sendFriendRequest(String toUserId) async {
+    final result = await ApiService.sendFriendRequest(UserSession.id, toUserId);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result["message"] ?? "Request sent")),
+    );
   }
 
   @override
@@ -305,6 +316,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                           ),
                                         ),
                                       ),
+                                      if (attendee.id != UserSession.id)
+                                        TextButton(
+                                          onPressed: () async {
+                                            await sendFriendRequest(attendee.id);
+                                          },
+                                          child: const Text("Add Friend"),
+                                        ),
                                     ],
                                   ),
                                 );

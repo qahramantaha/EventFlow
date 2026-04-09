@@ -8,11 +8,11 @@ const eventSchema = new mongoose.Schema(
     },
     organiser: {
       type: String,
-      default: '',
+      required: true,
     },
     description: {
       type: String,
-      default: '',
+      required: true,
     },
     date: {
       type: String,
@@ -34,6 +34,10 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    createdBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User',
+},
     attendees: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -41,7 +45,9 @@ const eventSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model('Event', eventSchema);

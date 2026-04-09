@@ -38,46 +38,46 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String formatDate(String dateText) {
-  try {
-    DateTime date = DateTime.parse(dateText);
-    return "${date.day}/${date.month}/${date.year}";
-  } catch (e) {
-    return "";
+    try {
+      DateTime date = DateTime.parse(dateText);
+      return "${date.day}/${date.month}/${date.year}";
+    } catch (e) {
+      return "";
+    }
   }
-}
 
   Future<void> loadProfile() async {
-  print("UserSession.email: ${UserSession.email}");
+    print("UserSession.email: ${UserSession.email}");
 
-  if (UserSession.email.isEmpty) {
-    print("UserSession.email is empty");
-    return;
+    if (UserSession.email.isEmpty) {
+      print("UserSession.email is empty");
+      return;
+    }
+
+    try {
+      final result = await ApiService.getProfile(UserSession.email);
+      print("Profile API result: $result");
+
+      if (!mounted) return;
+
+      setState(() {
+        name = (result["name"] ?? "").toString();
+        email = (result["email"] ?? "").toString();
+        description = (result["description"] ?? "").toString();
+
+        if (result["createdAt"] != null &&
+            result["createdAt"].toString().isNotEmpty) {
+          memberSince = formatDate(result["createdAt"].toString());
+        } else {
+          memberSince = "Not available";
+        }
+
+        descriptionController.text = description;
+      });
+    } catch (e) {
+      print("Load profile error: $e");
+    }
   }
-
-  try {
-    final result = await ApiService.getProfile(UserSession.email);
-    print("Profile API result: $result");
-
-    if (!mounted) return;
-
-    setState(() {
-      name = (result["name"] ?? "").toString();
-      email = (result["email"] ?? "").toString();
-      description = (result["description"] ?? "").toString();
-
-      if (result["createdAt"] != null &&
-          result["createdAt"].toString().isNotEmpty) {
-        memberSince = formatDate(result["createdAt"].toString());
-      } else {
-        memberSince = "Not available";
-      }
-
-      descriptionController.text = description;
-    });
-  } catch (e) {
-    print("Load profile error: $e");
-  }
-}
 
   Future<void> saveDescription() async {
     final result = await ApiService.updateProfile(
@@ -229,11 +229,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(memberSince, style: const TextStyle(fontSize: 16)),
+                    Text(
+                      memberSince.isEmpty ? "Not available" : memberSince,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -255,6 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               onPressed: () {
                                 UserSession.email = "";
                                 UserSession.name = "";
+                                UserSession.id = "";
 
                                 Navigator.pop(context);
                                 Navigator.pushReplacementNamed(context, '/login');

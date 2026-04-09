@@ -3,6 +3,7 @@ import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'event_details_page.dart';
 import 'create_event_page.dart';
+import 'user_session.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -19,7 +20,7 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> loadEvents() async {
     try {
-      final events = await EventService.getEvents();
+      final events = await EventService.getEvents(UserSession.id);
 
       if (!mounted) return;
 
@@ -49,10 +50,12 @@ class _EventsPageState extends State<EventsPage> {
     super.dispose();
   }
 
-  void filterEvents(String value) {
+ void filterEvents(String value) {
     setState(() {
       filteredEvents = allEvents.where((event) {
-        return event.title.toLowerCase().contains(value.toLowerCase());
+        return event.title.toLowerCase().contains(value.toLowerCase()) ||
+               event.location.toLowerCase().contains(value.toLowerCase()) ||
+               event.category.toLowerCase().contains(value.toLowerCase());
       }).toList();
     });
   }
