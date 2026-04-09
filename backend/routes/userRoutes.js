@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const Message = require("../models/Message");
+const Event = require("../models/Event");
 
 router.post("/signup", async (req, res) => {
   try {
@@ -92,6 +94,63 @@ router.put("/profile/:email", async (req, res) => {
 
     res.status(200).json({ message: "Profile updated successfully" });
   } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/home-notifications/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const unreadMessagesCount = await Message.countDocuments({
+      receiverId: userId,
+      isRead: false
+    });
+
+    const goingEventsCount = await Event.countDocuments({
+      attendees: userId
+    });
+
+    const friendRequestsCount = user.friendRequests.length;
+
+    const notifications = [];
+
+    if (friendRequestsCount > 0) {
+      notifications.push({
+        type: "friend_request",
+        text: `You have ${friendRequestsCount} friend request${friendRequestsCount == 1 ? "" : "s"}`
+      });
+    }
+
+    if (unreadMessagesCount > 0) {
+      notifications.push({
+        type: "message",
+        text: `You have ${unreadMessagesCount} unread message${unreadMessagesCount == 1 ? "" : "s"}`
+      });
+    }
+
+    if (goingEventsCount > 0) {
+      notifications.push({
+        type: "event",
+        text: `You are going to ${goingEventsCount} event${goingEventsCount == 1 ? "" : "s"}`
+      });
+    }
+
+    res.status(200).json({
+      friendRequestsCount,
+      unreadMessagesCount,
+      goingEventsCount,
+      totalNotifications: notifications.length,
+      notifications
+    });
+  } catch (error) {
+    console.log("HOME NOTIFICATIONS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

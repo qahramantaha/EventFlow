@@ -93,6 +93,15 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
+  static Future<Map<String, dynamic>> getHomeNotifications(String userId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/home-notifications/$userId"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    return jsonDecode(response.body);
+  }
+
   static Future<Map<String, dynamic>> getFriends(String userId) async {
     final response = await http.get(
       Uri.parse("$baseUrl/friends/$userId"),
