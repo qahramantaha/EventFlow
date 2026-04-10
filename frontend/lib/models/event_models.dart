@@ -29,6 +29,8 @@ class EventModel {
   final String category;
   final int goingCount;
   final bool isGoing;
+  final bool isPrivate;
+  final String createdBy;
   final List<AttendeeModel> attendees;
 
   EventModel({
@@ -42,6 +44,8 @@ class EventModel {
     required this.category,
     required this.goingCount,
     required this.isGoing,
+    required this.isPrivate,
+    required this.createdBy,
     required this.attendees,
   });
 
@@ -59,6 +63,8 @@ class EventModel {
       category: json['category'] ?? '',
       goingCount: json['goingCount'] ?? 0,
       isGoing: json['isGoing'] ?? false,
+      isPrivate: json['isPrivate'] ?? false,
+      createdBy: json['createdBy']?.toString() ?? '',
       attendees: attendeeList
           .map((attendee) => AttendeeModel.fromJson(attendee))
           .toList(),
