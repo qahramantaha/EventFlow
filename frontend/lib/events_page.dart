@@ -18,6 +18,8 @@ class _EventsPageState extends State<EventsPage> {
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
 
+  String selectedFilter = 'All';
+
   Future<void> loadEvents() async {
     try {
       final events = await EventService.getEvents(UserSession.id);
@@ -26,9 +28,10 @@ class _EventsPageState extends State<EventsPage> {
 
       setState(() {
         allEvents = events;
-        filteredEvents = events;
         isLoading = false;
       });
+
+      applyFilters();
     } catch (e) {
       if (!mounted) return;
 
@@ -50,13 +53,30 @@ class _EventsPageState extends State<EventsPage> {
     super.dispose();
   }
 
- void filterEvents(String value) {
-    setState(() {
-      filteredEvents = allEvents.where((event) {
-        return event.title.toLowerCase().contains(value.toLowerCase()) ||
-               event.location.toLowerCase().contains(value.toLowerCase()) ||
-               event.category.toLowerCase().contains(value.toLowerCase());
+  void applyFilters() {
+    List<EventModel> result = List.from(allEvents);
+    String searchText = searchController.text.toLowerCase();
+
+    if (selectedFilter == 'Going') {
+      result = result.where((event) => event.isGoing).toList();
+    } else if (selectedFilter == 'Created By Me') {
+      result = result.where((event) {
+        return event.createdBy == UserSession.id;
       }).toList();
+    } else if (selectedFilter == 'Private') {
+      result = result.where((event) => event.isPrivate).toList();
+    }
+
+    if (searchText.isNotEmpty) {
+      result = result.where((event) {
+        return event.title.toLowerCase().contains(searchText) ||
+            event.location.toLowerCase().contains(searchText) ||
+            event.category.toLowerCase().contains(searchText);
+      }).toList();
+    }
+
+    setState(() {
+      filteredEvents = result;
     });
   }
 
@@ -66,6 +86,159 @@ class _EventsPageState extends State<EventsPage> {
     if (category == 'ACADEMIC') return Colors.blue;
     if (category == 'CAREERS') return Colors.orange;
     return Colors.grey;
+  }
+
+  Widget buildFilterChip(String label) {
+    bool isSelected = selectedFilter == label;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedFilter = label;
+        });
+        applyFilters();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF005F89) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF005F89) : Colors.grey.shade300,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildEventCard(EventModel event) {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailsPage(
+              eventId: event.id,
+            ),
+          ),
+        );
+        loadEvents();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: getCategoryColor(event.category),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    event.category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (event.isPrivate) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'PRIVATE',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                Text(
+                  '${event.goingCount} going',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              event.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1F2D3D),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${event.date} at ${event.time}',
+              style: const TextStyle(
+                color: Color(0xFF2F80B7),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              event.location,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 16,
+              ),
+            ),
+            if (event.isGoing) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'You are going',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -112,11 +285,26 @@ class _EventsPageState extends State<EventsPage> {
                     ),
                     child: TextField(
                       controller: searchController,
-                      onChanged: filterEvents,
+                      onChanged: (value) {
+                        applyFilters();
+                      },
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Search events...',
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 42,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        buildFilterChip('All'),
+                        buildFilterChip('Going'),
+                        buildFilterChip('Created By Me'),
+                        buildFilterChip('Private'),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -132,95 +320,7 @@ class _EventsPageState extends State<EventsPage> {
                             itemCount: filteredEvents.length,
                             itemBuilder: (context, index) {
                               final event = filteredEvents[index];
-
-                              return GestureDetector(
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EventDetailsPage(
-                                        eventId: event.id,
-                                      ),
-                                    ),
-                                  );
-                                  loadEvents();
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 14),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 5,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: getCategoryColor(event.category),
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              event.category,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            '${event.goingCount} going',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        event.title,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1F2D3D),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '${event.date} at ${event.time}',
-                                        style: const TextStyle(
-                                          color: Color(0xFF2F80B7),
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        event.location,
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                              return buildEventCard(event);
                             },
                           ),
                   ),

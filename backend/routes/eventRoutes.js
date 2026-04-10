@@ -66,7 +66,6 @@ router.post('/create', fakeAuth, async (req, res) => {
   }
 });
 
-
 // Get all events
 router.get('/', fakeAuth, async (req, res) => {
   try {
@@ -79,18 +78,26 @@ router.get('/', fakeAuth, async (req, res) => {
       ]
     }).sort({ createdAt: -1 });
 
-    const formattedEvents = events.map((event) => ({
-      _id: event._id,
-      title: event.title,
-      organiser: event.organiser,
-      description: event.description,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      category: event.category,
-      isPrivate: event.isPrivate,
-      goingCount: event.attendees.length,
-    }));
+    const formattedEvents = events.map((event) => {
+      const isGoing = event.attendees.some(
+        (attendeeId) => attendeeId.toString() === userId
+      );
+
+      return {
+        _id: event._id,
+        title: event.title,
+        organiser: event.organiser,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        category: event.category,
+        isPrivate: event.isPrivate,
+        createdBy: event.createdBy,
+        goingCount: event.attendees.length,
+        isGoing: isGoing,
+      };
+    });
 
     res.json(formattedEvents);
   } catch (error) {
@@ -124,6 +131,7 @@ router.get('/:id', fakeAuth, async (req, res) => {
       location: event.location,
       category: event.category,
       isPrivate: event.isPrivate,
+      createdBy: event.createdBy,
       goingCount: event.attendees.length,
       isGoing: isGoing,
       attendees: event.attendees.map((attendee) => ({
@@ -172,41 +180,29 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
 });
 
 // Cancel RSVP
-router.post('/:id/rsvp', fakeAuth, async (req, res) => {
+router.post('/:id/cancel-rsvp', fakeAuth, async (req, res) => {
   try {
-    console.log('RSVP event id:', req.params.id);
-    console.log('RSVP user id:', req.user.id);
-
     const event = await Event.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    console.log('Attendees before:', event.attendees);
-
     const userId = req.user.id;
 
-    const alreadyGoing = event.attendees.some(
-      (attendeeId) => attendeeId.toString() === userId
+    event.attendees = event.attendees.filter(
+      (attendeeId) => attendeeId.toString() !== userId
     );
 
-    if (alreadyGoing) {
-      return res.status(400).json({ message: 'User already RSVP\'d' });
-    }
-
-    event.attendees.push(new mongoose.Types.ObjectId(userId));
     await event.save();
 
-    console.log('Attendees after:', event.attendees);
-
     res.json({
-      message: 'RSVP successful',
+      message: 'RSVP cancelled',
       goingCount: event.attendees.length,
-      isGoing: true,
+      isGoing: false,
     });
   } catch (error) {
-    console.error('RSVP error:', error);
+    console.error('Cancel RSVP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
