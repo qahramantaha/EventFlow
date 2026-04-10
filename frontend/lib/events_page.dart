@@ -61,7 +61,7 @@ class _EventsPageState extends State<EventsPage> {
       result = result.where((event) => event.isGoing).toList();
     } else if (selectedFilter == 'Created By Me') {
       result = result.where((event) {
-        return event.createdBy.toString() == UserSession.id;
+        return event.createdBy == UserSession.id;
       }).toList();
     } else if (selectedFilter == 'Private') {
       result = result.where((event) => event.isPrivate).toList();
