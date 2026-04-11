@@ -17,6 +17,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isEditing = false;
 
   TextEditingController descriptionController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
 
   final List<Color> profileColors = [
     Colors.blue,
@@ -73,16 +74,18 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         descriptionController.text = description;
+        nameController.text = name;
       });
     } catch (e) {
       print("Load profile error: $e");
     }
   }
 
-  Future<void> saveDescription() async {
+  Future<void> saveProfile() async {
     final result = await ApiService.updateProfile(
       UserSession.email,
       descriptionController.text,
+      nameController.text,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -91,6 +94,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       description = descriptionController.text;
+      name = nameController.text;
+      UserSession.name = nameController.text;
       isEditing = false;
     });
   }
@@ -104,6 +109,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void dispose() {
     descriptionController.dispose();
+    nameController.dispose();
     super.dispose();
   }
 
@@ -164,7 +170,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(name, style: const TextStyle(fontSize: 16)),
+                    if (isEditing)
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "Enter your name",
+                        ),
+                      )
+                    else
+                      Text(name, style: const TextStyle(fontSize: 16)),
                     const Divider(),
                     const Text(
                       "EMAIL",
@@ -208,7 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ElevatedButton(
                           onPressed: () {
                             if (isEditing) {
-                              saveDescription();
+                              saveProfile();
                             } else {
                               setState(() {
                                 isEditing = true;
@@ -217,6 +232,22 @@ class _ProfilePageState extends State<ProfilePage> {
                           },
                           child: Text(isEditing ? "Save" : "Edit"),
                         ),
+                        if (isEditing)
+                          const SizedBox(width: 10),
+                        if (isEditing)
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                isEditing = false;
+                                nameController.text = name;
+                                descriptionController.text = description;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                            ),
+                            child: const Text("Cancel"),
+                          ),
                       ],
                     ),
                     const Divider(),
@@ -246,7 +277,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       builder: (context) {
                         return AlertDialog(
                           title: const Text("Logout"),
-                          content: const Text("Are you sure you want to log out?"),
+                          content: const Text(
+                              "Are you sure you want to log out?"),
                           actions: [
                             TextButton(
                               onPressed: () {
@@ -261,7 +293,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 UserSession.id = "";
 
                                 Navigator.pop(context);
-                                Navigator.pushReplacementNamed(context, '/login');
+                                Navigator.pushReplacementNamed(
+                                    context, '/login');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,

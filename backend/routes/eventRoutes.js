@@ -98,6 +98,33 @@ router.get('/', fakeAuth, async (req, res) => {
   }
 });
 
+// Get events user is going to
+router.get('/my-events', fakeAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const events = await Event.find({ attendees: userId }).sort({ createdAt: -1 });
+
+    const formattedEvents = events.map((event) => ({
+      _id: event._id,
+      title: event.title,
+      organiser: event.organiser,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      isPrivate: event.isPrivate,
+      goingCount: event.attendees.length,
+    }));
+
+    res.json(formattedEvents);
+  } catch (error) {
+    console.error('Get my events error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get one event
 router.get('/:id', fakeAuth, async (req, res) => {
   try {

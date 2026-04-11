@@ -81,12 +81,14 @@ class ApiService {
   static Future<Map<String, dynamic>> updateProfile(
     String email,
     String description,
+    String name,
   ) async {
     final response = await http.put(
       Uri.parse("$baseUrl/profile/$email"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "description": description,
+        "name": name,
       }),
     );
 

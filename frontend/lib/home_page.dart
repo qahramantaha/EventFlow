@@ -3,6 +3,9 @@ import 'map_page.dart';
 import 'main_page.dart';
 import 'api_service.dart';
 import 'user_session.dart';
+import 'models/event_models.dart';
+import 'services/event_services.dart';
+import 'event_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,10 +20,12 @@ class _HomePageState extends State<HomePage> {
   int unreadMessagesCount = 0;
   int goingEventsCount = 0;
   List notifications = [];
+  List<EventModel> myEvents = [];
 
   Future<void> loadHomeNotifications() async {
     try {
       final result = await ApiService.getHomeNotifications(UserSession.id);
+      final events = await EventService.getMyEvents(UserSession.id);
 
       if (!mounted) return;
 
@@ -29,6 +34,7 @@ class _HomePageState extends State<HomePage> {
         unreadMessagesCount = result["unreadMessagesCount"] ?? 0;
         goingEventsCount = result["goingEventsCount"] ?? 0;
         notifications = result["notifications"] ?? [];
+        myEvents = events;
         isLoading = false;
       });
     } catch (e) {
@@ -52,6 +58,18 @@ class _HomePageState extends State<HomePage> {
     if (type == "message") return Colors.green;
     if (type == "event") return Colors.orange;
     return Colors.blue;
+  }
+
+  // Navigate based on notification type
+  void handleNotificationTap(String type) {
+    final mainPage = context.findAncestorStateOfType<MainPageState>();
+    if (type == "message") {
+      // Go to Friends page (index 2)
+      mainPage?.goToPage(2);
+    } else if (type == "friend_request") {
+      // Go to Friends page (index 2)
+      mainPage?.goToPage(2);
+    }
   }
 
   @override
@@ -160,39 +178,152 @@ class _HomePageState extends State<HomePage> {
                                 )
                               : Column(
                                   children: notifications.map((notification) {
-                                    return Container(
-                                      width: double.infinity,
-                                      margin: const EdgeInsets.only(bottom: 10),
-                                      padding: const EdgeInsets.all(14),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF7F8FA),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
+                                    final type = notification["type"];
+
+                                    // Show event list for event notifications
+                                    if (type == "event" && myEvents.isNotEmpty) {
+                                      return Column(
                                         children: [
-                                          CircleAvatar(
-                                            backgroundColor: getNotificationColor(
-                                              notification["type"],
+                                          Container(
+                                            width: double.infinity,
+                                            margin: const EdgeInsets.only(bottom: 6),
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF7F8FA),
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                            child: Icon(
-                                              getNotificationIcon(
-                                                notification["type"],
-                                              ),
-                                              color: Colors.white,
-                                              size: 20,
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  backgroundColor: Colors.orange,
+                                                  child: const Icon(
+                                                    Icons.event_available,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    notification["text"] ?? "",
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              notification["text"] ?? "",
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
+                                          // Show each event
+                                          ...myEvents.map((event) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => EventDetailsPage(
+                                                      eventId: event.id,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.only(
+                                                  bottom: 8,
+                                                  left: 14,
+                                                ),
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.orange.shade50,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(
+                                                    color: Colors.orange.shade200,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.event,
+                                                      color: Colors.orange,
+                                                      size: 18,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            event.title,
+                                                            style: const TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            '${event.date} • ${event.location}',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey.shade600,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    const Icon(
+                                                      Icons.arrow_forward_ios,
+                                                      size: 12,
+                                                      color: Colors.orange,
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ),
+                                            );
+                                          }).toList(),
                                         ],
+                                      );
+                                    }
+
+                                    // Default notification tile
+                                    return GestureDetector(
+                                      onTap: () => handleNotificationTap(type),
+                                      child: Container(
+                                        width: double.infinity,
+                                        margin: const EdgeInsets.only(bottom: 10),
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF7F8FA),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: getNotificationColor(type),
+                                              child: Icon(
+                                                getNotificationIcon(type),
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                notification["text"] ?? "",
+                                                style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 14,
+                                              color: Colors.grey,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     );
                                   }).toList(),

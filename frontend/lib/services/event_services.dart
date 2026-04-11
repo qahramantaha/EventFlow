@@ -24,6 +24,26 @@ class EventService {
     }
   }
 
+  // Get events the user has RSVPd to
+  static Future<List<EventModel>> getMyEvents(String userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/my-events'),
+      headers: {
+        "Content-Type": "application/json",
+        "userId": userId,
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final decoded = jsonDecode(response.body) as List<dynamic>;
+      return decoded
+          .map((item) => EventModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load my events: ${response.body}');
+    }
+  }
+
   static Future<EventModel> getEventDetails(String eventId, String userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/$eventId'),

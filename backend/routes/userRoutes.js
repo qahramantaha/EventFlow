@@ -81,7 +81,7 @@ router.get("/profile/:email", async (req, res) => {
 router.put("/profile/:email", async (req, res) => {
   try {
     const email = req.params.email;
-    const { description } = req.body;
+    const { description, name } = req.body;
 
     const user = await User.findOne({ email });
 
@@ -89,6 +89,12 @@ router.put("/profile/:email", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Update name if provided
+    if (name && name.trim() !== "") {
+      user.name = name.trim();
+    }
+
+    // Update description
     user.description = description;
     await user.save();
 
