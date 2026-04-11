@@ -3,6 +3,7 @@ import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'user_session.dart';
 import 'api_service.dart';
+import 'edit_event_page.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final String eventId;
@@ -115,6 +116,63 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     );
   }
 
+  Future<void> handleDeleteEvent() async {
+    if (event == null) return;
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: const Text('Are you sure you want to delete this event?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await EventService.deleteEvent(event!.id, userId);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Event deleted successfully')),
+        );
+
+        Navigator.pop(context, true);
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete event')),
+        );
+      }
+    }
+  }
+
+  Future<void> handleEditEvent() async {
+    if (event == null) return;
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditEventPage(event: event!),
+      ),
+    );
+
+    if (result == true) {
+      await loadEventDetails();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,6 +210,48 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                           color: Colors.grey.shade600,
                         ),
                       ),
+                      if (event!.createdBy == UserSession.id) ...[
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: handleEditEvent,
+                                icon: const Icon(Icons.edit, color: Colors.white),
+                                label: const Text(
+                                  'Edit Event',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF005F89),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: handleDeleteEvent,
+                                icon: const Icon(Icons.delete, color: Colors.white),
+                                label: const Text(
+                                  'Delete Event',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 18),
                       Container(
                         width: double.infinity,

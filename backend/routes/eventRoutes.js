@@ -123,7 +123,9 @@ router.get('/my-events', fakeAuth, async (req, res) => {
       location: event.location,
       category: event.category,
       isPrivate: event.isPrivate,
+      createdBy: event.createdBy,
       goingCount: event.attendees.length,
+      isGoing: true,
     }));
 
     res.json(formattedEvents);
@@ -169,6 +171,73 @@ router.get('/:id', fakeAuth, async (req, res) => {
     });
   } catch (error) {
     console.log('Get event details error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update event
+router.put('/:id', fakeAuth, async (req, res) => {
+  try {
+    const {
+      title,
+      organiser,
+      description,
+      date,
+      time,
+      location,
+      category,
+      isPrivate,
+    } = req.body;
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (event.createdBy?.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only edit your own event' });
+    }
+
+    event.title = title ?? event.title;
+    event.organiser = organiser ?? event.organiser;
+    event.description = description ?? event.description;
+    event.date = date ?? event.date;
+    event.time = time ?? event.time;
+    event.location = location ?? event.location;
+    event.category = category ?? event.category;
+    event.isPrivate = isPrivate ?? event.isPrivate;
+
+    await event.save();
+
+    res.status(200).json({
+      message: 'Event updated successfully',
+      event,
+    });
+  } catch (error) {
+    console.error('Update event error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete event
+router.delete('/:id', fakeAuth, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (event.createdBy?.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only delete your own event' });
+    }
+
+    await Event.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Delete event error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

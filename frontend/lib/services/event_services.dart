@@ -24,7 +24,6 @@ class EventService {
     }
   }
 
-  // Get events the user has RSVPd to
   static Future<List<EventModel>> getMyEvents(String userId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/my-events'),
@@ -94,6 +93,59 @@ class EventService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('Failed to create event: ${response.body}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateEvent(
+    String eventId,
+    String title,
+    String description,
+    String date,
+    String time,
+    String location,
+    String category,
+    String organiser,
+    bool isPrivate,
+    String userId,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/$eventId'),
+      headers: {
+        "Content-Type": "application/json",
+        "userId": userId,
+      },
+      body: jsonEncode({
+        "title": title,
+        "organiser": organiser,
+        "description": description,
+        "date": date,
+        "time": time,
+        "location": location,
+        "category": category,
+        "isPrivate": isPrivate,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to update event: ${response.body}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteEvent(String eventId, String userId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$eventId'),
+      headers: {
+        "Content-Type": "application/json",
+        "userId": userId,
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to delete event: ${response.body}');
     }
   }
 
