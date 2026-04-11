@@ -50,6 +50,7 @@ class _HomePageState extends State<HomePage> {
     if (type == "friend_request") return Icons.person_add;
     if (type == "message") return Icons.message;
     if (type == "event") return Icons.event_available;
+    if (type == "event_invite") return Icons.mail;
     return Icons.notifications;
   }
 
@@ -57,11 +58,12 @@ class _HomePageState extends State<HomePage> {
     if (type == "friend_request") return Colors.deepPurple;
     if (type == "message") return Colors.green;
     if (type == "event") return Colors.orange;
+    if (type == "event_invite") return Colors.teal;
     return Colors.blue;
   }
 
   // Navigate based on notification type
-  void handleNotificationTap(String type) {
+  void handleNotificationTap(String type, String? eventId) {
     final mainPage = context.findAncestorStateOfType<MainPageState>();
     if (type == "message") {
       // Go to Friends page (index 2)
@@ -69,6 +71,14 @@ class _HomePageState extends State<HomePage> {
     } else if (type == "friend_request") {
       // Go to Friends page (index 2)
       mainPage?.goToPage(2);
+    } else if (type == "event_invite" && eventId != null) {
+      // Go directly to the event details page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EventDetailsPage(eventId: eventId),
+        ),
+      );
     }
   }
 
@@ -179,6 +189,7 @@ class _HomePageState extends State<HomePage> {
                               : Column(
                                   children: notifications.map((notification) {
                                     final type = notification["type"];
+                                    final eventId = notification["eventId"]?.toString();
 
                                     // Show event list for event notifications
                                     if (type == "event" && myEvents.isNotEmpty) {
@@ -286,9 +297,55 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }
 
+                                    // Event invite notification tile
+                                    if (type == "event_invite") {
+                                      return GestureDetector(
+                                        onTap: () => handleNotificationTap(type, eventId),
+                                        child: Container(
+                                          width: double.infinity,
+                                          margin: const EdgeInsets.only(bottom: 10),
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: Colors.teal.shade50,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.teal.shade200,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundColor: Colors.teal,
+                                                child: const Icon(
+                                                  Icons.mail,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  notification["text"] ?? "",
+                                                  style: const TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              const Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 14,
+                                                color: Colors.teal,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }
+
                                     // Default notification tile
                                     return GestureDetector(
-                                      onTap: () => handleNotificationTap(type),
+                                      onTap: () => handleNotificationTap(type, null),
                                       child: Container(
                                         width: double.infinity,
                                         margin: const EdgeInsets.only(bottom: 10),

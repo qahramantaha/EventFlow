@@ -108,7 +108,13 @@ router.get("/home-notifications/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate({
+      path: "eventInvites.eventId",
+      select: "title date location"
+    }).populate({
+      path: "eventInvites.fromUserId",
+      select: "name"
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -124,6 +130,9 @@ router.get("/home-notifications/:userId", async (req, res) => {
     });
 
     const friendRequestsCount = user.friendRequests.length;
+
+    // Get event invites count
+    const eventInvitesCount = user.eventInvites.length;
 
     const notifications = [];
 
@@ -148,10 +157,25 @@ router.get("/home-notifications/:userId", async (req, res) => {
       });
     }
 
+    // Add event invite notifications
+    if (eventInvitesCount > 0) {
+      user.eventInvites.forEach((invite) => {
+        notifications.push({
+          type: "event_invite",
+          text: `${invite.fromUserId?.name ?? "Someone"} invited you to ${invite.eventId?.title ?? "an event"}`,
+          eventId: invite.eventId?._id,
+          eventTitle: invite.eventId?.title,
+          eventDate: invite.eventId?.date,
+          eventLocation: invite.eventId?.location,
+        });
+      });
+    }
+
     res.status(200).json({
       friendRequestsCount,
       unreadMessagesCount,
       goingEventsCount,
+      eventInvitesCount,
       totalNotifications: notifications.length,
       notifications
     });
@@ -286,6 +310,72 @@ router.post("/reject-request", async (req, res) => {
     res.status(200).json({ message: "Friend request rejected" });
   } catch (error) {
     console.log("REJECT REQUEST ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Send event invite to a friend
+router.post("/invite-to-event", async (req, res) => {
+  try {
+    const { fromUserId, toUserId, eventId } = req.body;
+
+    if (!fromUserId || !toUserId || !eventId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const toUser = await User.findById(toUserId);
+
+    if (!toUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if already invited
+    const alreadyInvited = toUser.eventInvites.some(
+      (invite) => invite.eventId.toString() === eventId &&
+                  invite.fromUserId.toString() === fromUserId
+    );
+
+    if (alreadyInvited) {
+      return res.status(400).json({ message: "Already invited" });
+    }
+
+    toUser.eventInvites.push({ eventId, fromUserId });
+    await toUser.save();
+
+    res.status(200).json({ message: "Invite sent successfully" });
+  } catch (error) {
+    console.log("INVITE TO EVENT ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Remove friend
+router.post("/remove-friend", async (req, res) => {
+  try {
+    const { userId, friendId } = req.body;
+
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Remove from both sides
+    user.friends = user.friends.filter(
+      (id) => id.toString() !== friendId
+    );
+
+    friend.friends = friend.friends.filter(
+      (id) => id.toString() !== userId
+    );
+
+    await user.save();
+    await friend.save();
+
+    res.status(200).json({ message: "Friend removed successfully" });
+  } catch (error) {
+    console.log("REMOVE FRIEND ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

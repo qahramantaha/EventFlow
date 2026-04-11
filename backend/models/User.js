@@ -30,6 +30,19 @@ const userSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
       }
+    ],
+    // Event invites from friends
+    eventInvites: [
+      {
+        eventId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Event"
+        },
+        fromUserId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User"
+        }
+      }
     ]
   },
   {
