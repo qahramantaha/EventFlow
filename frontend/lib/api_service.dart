@@ -217,4 +217,40 @@ class ApiService {
 
     return jsonDecode(response.body);
   }
+
+  // Send event invite to a friend
+  static Future<Map<String, dynamic>> inviteFriendToEvent(
+    String fromUserId,
+    String toUserId,
+    String eventId,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/invite-to-event"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "fromUserId": fromUserId,
+        "toUserId": toUserId,
+        "eventId": eventId,
+      }),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  // Remove friend
+  static Future<Map<String, dynamic>> removeFriend(
+    String userId,
+    String friendId,
+  ) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/remove-friend"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": userId,
+        "friendId": friendId,
+      }),
+    );
+
+    return jsonDecode(response.body);
+  }
 }

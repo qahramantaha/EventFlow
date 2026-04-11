@@ -44,6 +44,45 @@ class _FriendsPageState extends State<FriendsPage> {
     loadFriends();
   }
 
+  Future<void> removeFriend(String friendId) async {
+    // Show confirmation dialog
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Remove Friend"),
+        content: const Text("Are you sure you want to remove this friend?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text(
+              "Remove",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await ApiService.removeFriend(UserSession.id, friendId);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Friend removed")),
+      );
+
+      loadFriends();
+    }
+  }
+
   bool hasUnread(String friendId) {
     return unreadByFriend[friendId] != null && unreadByFriend[friendId] > 0;
   }
@@ -183,6 +222,7 @@ class _FriendsPageState extends State<FriendsPage> {
                                           shape: BoxShape.circle,
                                         ),
                                       ),
+                                    // Message button
                                     IconButton(
                                       onPressed: () async {
                                         await Navigator.push(
@@ -199,6 +239,14 @@ class _FriendsPageState extends State<FriendsPage> {
                                       icon: const Icon(
                                         Icons.message_outlined,
                                         color: Color(0xFF005F89),
+                                      ),
+                                    ),
+                                    // Remove friend button
+                                    IconButton(
+                                      onPressed: () => removeFriend(friendId),
+                                      icon: const Icon(
+                                        Icons.person_remove,
+                                        color: Colors.red,
                                       ),
                                     ),
                                   ],

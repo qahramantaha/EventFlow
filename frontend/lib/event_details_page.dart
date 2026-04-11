@@ -18,6 +18,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   EventModel? event;
   bool isLoading = true;
 
+  Set<String> sentRequests = {};
+
   String get userId => UserSession.id;
 
   Future<void> loadEventDetails() async {
@@ -111,6 +113,10 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
     if (!mounted) return;
 
+    setState(() {
+      sentRequests.add(toUserId);
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(result["message"] ?? "Request sent")),
     );
@@ -171,6 +177,87 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     if (result == true) {
       await loadEventDetails();
     }
+  }
+
+  Future<void> showInviteFriendsDialog() async {
+    final result = await ApiService.getFriends(UserSession.id);
+    final friends = result["friends"] as List? ?? [];
+
+    if (!mounted) return;
+
+    if (friends.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You have no friends to invite yet!")),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Invite Friends",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...friends.map((friend) {
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF005F89),
+                    child: Text(
+                      friend["name"].toString().isNotEmpty
+                          ? friend["name"].toString()[0].toUpperCase()
+                          : "?",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(friend["name"].toString()),
+                  subtitle: Text(friend["email"].toString()),
+                  trailing: ElevatedButton(
+                    onPressed: () async {
+                      final result = await ApiService.inviteFriendToEvent(
+                        UserSession.id,
+                        friend["_id"].toString(),
+                        event!.id,
+                      );
+
+                      if (!mounted) return;
+
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result["message"] ?? "Invite sent!"),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF005F89),
+                    ),
+                    child: const Text(
+                      "Invite",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -327,30 +414,60 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Center(
-                        child: SizedBox(
-                          width: 170,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: handleRsvp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: event!.isGoing
-                                  ? Colors.red
-                                  : const Color(0xFF005F89),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 170,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: handleRsvp,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: event!.isGoing
+                                    ? Colors.red
+                                    : const Color(0xFF005F89),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              event!.isGoing ? 'Cancel RSVP' : "I'm Going",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                              child: Text(
+                                event!.isGoing ? 'Cancel RSVP' : "I'm Going",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 150,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              onPressed: showInviteFriendsDialog,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.person_add,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                "Invite",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 28),
                       const Text(
@@ -377,6 +494,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                             )
                           : Column(
                               children: event!.attendees.map((attendee) {
+                                final requestSent = sentRequests.contains(attendee.id);
+
                                 return Container(
                                   width: double.infinity,
                                   margin: const EdgeInsets.only(bottom: 10),
@@ -418,10 +537,19 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                       ),
                                       if (attendee.id != UserSession.id)
                                         TextButton(
-                                          onPressed: () async {
-                                            await sendFriendRequest(attendee.id);
-                                          },
-                                          child: const Text("Add Friend"),
+                                          onPressed: requestSent
+                                              ? null
+                                              : () async {
+                                                  await sendFriendRequest(attendee.id);
+                                                },
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: requestSent
+                                                ? Colors.grey
+                                                : const Color(0xFF005F89),
+                                          ),
+                                          child: Text(
+                                            requestSent ? "Request Sent" : "Add Friend",
+                                          ),
                                         ),
                                     ],
                                   ),
