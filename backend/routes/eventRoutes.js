@@ -78,18 +78,26 @@ router.get('/', fakeAuth, async (req, res) => {
       ]
     }).sort({ createdAt: -1 });
 
-    const formattedEvents = events.map((event) => ({
-      _id: event._id,
-      title: event.title,
-      organiser: event.organiser,
-      description: event.description,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      category: event.category,
-      isPrivate: event.isPrivate,
-      goingCount: event.attendees.length,
-    }));
+    const formattedEvents = events.map((event) => {
+      const isGoing = event.attendees.some(
+        (attendeeId) => attendeeId.toString() === userId
+      );
+
+      return {
+        _id: event._id,
+        title: event.title,
+        organiser: event.organiser,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        category: event.category,
+        isPrivate: event.isPrivate,
+        createdBy: event.createdBy,
+        goingCount: event.attendees.length,
+        isGoing: isGoing,
+      };
+    });
 
     res.json(formattedEvents);
   } catch (error) {
@@ -150,6 +158,7 @@ router.get('/:id', fakeAuth, async (req, res) => {
       location: event.location,
       category: event.category,
       isPrivate: event.isPrivate,
+      createdBy: event.createdBy,
       goingCount: event.attendees.length,
       isGoing: isGoing,
       attendees: event.attendees.map((attendee) => ({
