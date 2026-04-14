@@ -74,7 +74,8 @@ router.get('/', fakeAuth, async (req, res) => {
     const events = await Event.find({
       $or: [
         { isPrivate: false },
-        { isPrivate: true, createdBy: userId }
+        { isPrivate: true, createdBy: userId },
+        { isPrivate: true, invitedUsers: userId }
       ]
     }).sort({ createdAt: -1 });
 
@@ -145,6 +146,15 @@ router.get('/:id', fakeAuth, async (req, res) => {
     }
 
     const userId = req.user.id;
+
+    const isCreator = event.createdBy?.toString() === userId;
+    const isInvited = event.invitedUsers?.some(
+      (id) => id.toString() === userId
+    );
+
+    if (event.isPrivate && !isCreator && !isInvited) {
+      return res.status(403).json({ message: 'You do not have access to this private event' });
+    }
 
     const isGoing = event.attendees.some(
       (attendee) => attendee._id.toString() === userId

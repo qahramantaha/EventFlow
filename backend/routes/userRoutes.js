@@ -89,12 +89,10 @@ router.put("/profile/:email", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update name if provided
     if (name && name.trim() !== "") {
       user.name = name.trim();
     }
 
-    // Update description
     user.description = description;
     await user.save();
 
@@ -130,8 +128,6 @@ router.get("/home-notifications/:userId", async (req, res) => {
     });
 
     const friendRequestsCount = user.friendRequests.length;
-
-    // Get event invites count
     const eventInvitesCount = user.eventInvites.length;
 
     const notifications = [];
@@ -157,7 +153,6 @@ router.get("/home-notifications/:userId", async (req, res) => {
       });
     }
 
-    // Add event invite notifications
     if (eventInvitesCount > 0) {
       user.eventInvites.forEach((invite) => {
         notifications.push({
@@ -314,42 +309,72 @@ router.post("/reject-request", async (req, res) => {
   }
 });
 
-// Send event invite to a friend
 router.post("/invite-to-event", async (req, res) => {
-  try {
-    const { fromUserId, toUserId, eventId } = req.body;
+    try {
+      const { fromUserId, toUserId, eventId } = req.body;
 
-    if (!fromUserId || !toUserId || !eventId) {
-      return res.status(400).json({ message: "Missing required fields" });
+      if (!fromUserId || !toUserId || !eventId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      if (fromUserId === toUserId) {
+        return res.status(400).json({ message: "You cannot invite yourself" });
+      }
+
+      const fromUser = await User.findById(fromUserId);
+      const toUser = await User.findById(toUserId);
+      const event = await Event.findById(eventId);
+
+      if (!fromUser || !toUser || !event) {
+        return res.status(404).json({ message: "User or event not found" });
+      }
+
+      const areFriends = fromUser.friends.some(
+        (friendId) => friendId.toString() === toUserId
+      );
+
+      if (!areFriends) {
+        return res.status(400).json({ message: "You can only invite your friends" });
+      }
+
+      const alreadyAttending = event.attendees.some(
+        (attendeeId) => attendeeId.toString() === toUserId
+      );
+
+      if (alreadyAttending) {
+        return res.status(400).json({ message: "This friend is already attending" });
+      }
+
+      if (event.isPrivate && event.createdBy?.toString() !== fromUserId) {
+        return res.status(403).json({
+          message: "Only the event creator can invite friends to a private event"
+        });
+      }
+
+      const alreadyInvitedOnUser = toUser.eventInvites.some(
+        (invite) => invite.eventId.toString() === eventId
+      );
+
+      if (alreadyInvitedOnUser) {
+        return res.status(400).json({ message: "This friend is already invited" });
+      }
+
+      toUser.eventInvites.push({ eventId, fromUserId });
+
+      if (!event.invitedUsers.some((id) => id.toString() === toUserId)) {
+        event.invitedUsers.push(toUserId);
+      }
+
+      await toUser.save();
+      await event.save();
+
+      res.status(200).json({ message: "Invite sent successfully" });
+    } catch (error) {
+      console.log("INVITE TO EVENT ERROR:", error);
+      res.status(500).json({ message: "Server error" });
     }
+  });
 
-    const toUser = await User.findById(toUserId);
-
-    if (!toUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if already invited
-    const alreadyInvited = toUser.eventInvites.some(
-      (invite) => invite.eventId.toString() === eventId &&
-                  invite.fromUserId.toString() === fromUserId
-    );
-
-    if (alreadyInvited) {
-      return res.status(400).json({ message: "Already invited" });
-    }
-
-    toUser.eventInvites.push({ eventId, fromUserId });
-    await toUser.save();
-
-    res.status(200).json({ message: "Invite sent successfully" });
-  } catch (error) {
-    console.log("INVITE TO EVENT ERROR:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Remove friend
 router.post("/remove-friend", async (req, res) => {
   try {
     const { userId, friendId } = req.body;
@@ -361,7 +386,6 @@ router.post("/remove-friend", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Remove from both sides
     user.friends = user.friends.filter(
       (id) => id.toString() !== friendId
     );

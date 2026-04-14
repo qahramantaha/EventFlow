@@ -204,9 +204,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Invite Friends",
-                style: TextStyle(
+              Text(
+                event!.isPrivate ? "Invite Friends to Private Event" : "Invite Friends",
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -258,6 +258,16 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         );
       },
     );
+  }
+
+  bool get canInviteFriends {
+    if (event == null) return false;
+
+    if (event!.isPrivate) {
+      return event!.createdBy == UserSession.id;
+    }
+
+    return true;
   }
 
   @override
@@ -440,33 +450,35 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          SizedBox(
-                            width: 150,
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: showInviteFriendsDialog,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                          if (canInviteFriends) ...[
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 150,
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: showInviteFriendsDialog,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
                                 ),
-                              ),
-                              icon: const Icon(
-                                Icons.person_add,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              label: const Text(
-                                "Invite",
-                                style: TextStyle(
+                                icon: const Icon(
+                                  Icons.person_add,
                                   color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  "Invite",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 28),
