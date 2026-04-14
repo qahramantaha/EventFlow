@@ -2,6 +2,76 @@ const express = require("express");
 const router = express.Router();
 const Message = require("../models/Message");
 
+router.get("/unread/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const unreadMessages = await Message.find({
+      receiverId: userId,
+      isRead: false
+    });
+
+    const unreadByFriend = {};
+
+    unreadMessages.forEach((message) => {
+      const senderId = message.senderId.toString();
+
+      if (!unreadByFriend[senderId]) {
+        unreadByFriend[senderId] = 0;
+      }
+
+      unreadByFriend[senderId] += 1;
+    });
+
+    res.status(200).json({
+      totalUnread: unreadMessages.length,
+      unreadByFriend
+    });
+  } catch (error) {
+    console.log("GET UNREAD ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/previews/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: userId },
+        { receiverId: userId }
+      ]
+    }).sort({ createdAt: -1 });
+
+    const previewsByFriend = {};
+
+    for (const message of messages) {
+      const senderId = message.senderId.toString();
+      const receiverId = message.receiverId.toString();
+
+      const friendId = senderId === userId ? receiverId : senderId;
+
+      if (!previewsByFriend[friendId]) {
+        previewsByFriend[friendId] = {
+          text: message.text,
+          senderId,
+          receiverId,
+          createdAt: message.createdAt,
+          isRead: message.isRead
+        };
+      }
+    }
+
+    res.status(200).json({
+      previewsByFriend
+    });
+  } catch (error) {
+    console.log("GET PREVIEWS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.get("/:userId/:friendId", async (req, res) => {
   try {
     const { userId, friendId } = req.params;
@@ -85,37 +155,6 @@ router.put("/mark-read", async (req, res) => {
     res.status(200).json({ message: "Messages marked as read" });
   } catch (error) {
     console.log("MARK READ ERROR:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-router.get("/unread/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const unreadMessages = await Message.find({
-      receiverId: userId,
-      isRead: false
-    });
-
-    const unreadByFriend = {};
-
-    unreadMessages.forEach((message) => {
-      const senderId = message.senderId.toString();
-
-      if (!unreadByFriend[senderId]) {
-        unreadByFriend[senderId] = 0;
-      }
-
-      unreadByFriend[senderId] += 1;
-    });
-
-    res.status(200).json({
-      totalUnread: unreadMessages.length,
-      unreadByFriend
-    });
-  } catch (error) {
-    console.log("GET UNREAD ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

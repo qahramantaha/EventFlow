@@ -218,7 +218,17 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Send event invite to a friend
+  static Future<Map<String, dynamic>> getMessagePreviews(
+    String userId,
+  ) async {
+    final response = await http.get(
+      Uri.parse("$messageBaseUrl/previews/$userId"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    return jsonDecode(response.body);
+  }
+
   static Future<Map<String, dynamic>> inviteFriendToEvent(
     String fromUserId,
     String toUserId,
@@ -237,7 +247,6 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Remove friend
   static Future<Map<String, dynamic>> removeFriend(
     String userId,
     String friendId,

@@ -14,17 +14,20 @@ class _FriendsPageState extends State<FriendsPage> {
   List friendRequests = [];
   List friends = [];
   Map unreadByFriend = {};
+  Map previewsByFriend = {};
   bool isLoading = true;
 
   Future<void> loadFriends() async {
     try {
       final friendResult = await ApiService.getFriends(UserSession.id);
       final unreadResult = await ApiService.getUnreadMessages(UserSession.id);
+      final previewResult = await ApiService.getMessagePreviews(UserSession.id);
 
       setState(() {
         friendRequests = friendResult["friendRequests"] ?? [];
         friends = friendResult["friends"] ?? [];
         unreadByFriend = unreadResult["unreadByFriend"] ?? {};
+        previewsByFriend = previewResult["previewsByFriend"] ?? {};
         isLoading = false;
       });
     } catch (e) {
@@ -45,7 +48,6 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> removeFriend(String friendId) async {
-    // Show confirmation dialog
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -87,6 +89,23 @@ class _FriendsPageState extends State<FriendsPage> {
     return unreadByFriend[friendId] != null && unreadByFriend[friendId] > 0;
   }
 
+  String getPreviewText(String friendId) {
+    final preview = previewsByFriend[friendId];
+
+    if (preview == null) {
+      return "No messages yet";
+    }
+
+    final text = preview["text"]?.toString() ?? "";
+    final senderId = preview["senderId"]?.toString() ?? "";
+
+    if (senderId == UserSession.id) {
+      return "You: $text";
+    }
+
+    return text;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +116,8 @@ class _FriendsPageState extends State<FriendsPage> {
     Map user, {
     Widget? trailing,
     bool boldName = false,
+    String previewText = "",
+    bool boldPreview = false,
   }) {
     return Container(
       width: double.infinity,
@@ -126,12 +147,28 @@ class _FriendsPageState extends State<FriendsPage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              user["name"] ?? "",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: boldName ? FontWeight.bold : FontWeight.w600,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user["name"] ?? "",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: boldName ? FontWeight.bold : FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  previewText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    fontWeight: boldPreview ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
           ),
           if (trailing != null) trailing,
@@ -173,6 +210,7 @@ class _FriendsPageState extends State<FriendsPage> {
                             children: friendRequests.map((request) {
                               return buildUserCard(
                                 request,
+                                previewText: request["email"] ?? "",
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -205,10 +243,13 @@ class _FriendsPageState extends State<FriendsPage> {
                             children: friends.map((friend) {
                               final friendId = friend["_id"];
                               final unread = hasUnread(friendId);
+                              final previewText = getPreviewText(friendId);
 
                               return buildUserCard(
                                 friend,
                                 boldName: unread,
+                                previewText: previewText,
+                                boldPreview: unread,
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -222,7 +263,6 @@ class _FriendsPageState extends State<FriendsPage> {
                                           shape: BoxShape.circle,
                                         ),
                                       ),
-                                    // Message button
                                     IconButton(
                                       onPressed: () async {
                                         await Navigator.push(
@@ -241,7 +281,6 @@ class _FriendsPageState extends State<FriendsPage> {
                                         color: Color(0xFF005F89),
                                       ),
                                     ),
-                                    // Remove friend button
                                     IconButton(
                                       onPressed: () => removeFriend(friendId),
                                       icon: const Icon(
