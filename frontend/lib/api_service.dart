@@ -113,6 +113,18 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
+  static Future<Map<String, dynamic>> searchUsers(
+    String userId,
+    String query,
+  ) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/search/$userId?q=$query"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    return jsonDecode(response.body);
+  }
+
   static Future<Map<String, dynamic>> sendFriendRequest(
     String fromUserId,
     String toUserId,

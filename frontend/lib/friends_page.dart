@@ -13,9 +13,13 @@ class FriendsPage extends StatefulWidget {
 class _FriendsPageState extends State<FriendsPage> {
   List friendRequests = [];
   List friends = [];
+  List searchResults = [];
   Map unreadByFriend = {};
   Map previewsByFriend = {};
   bool isLoading = true;
+  bool isSearching = false;
+
+  TextEditingController searchController = TextEditingController();
 
   Future<void> loadFriends() async {
     try {
@@ -35,6 +39,47 @@ class _FriendsPageState extends State<FriendsPage> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> searchUsers(String value) async {
+    if (value.trim().isEmpty) {
+      setState(() {
+        searchResults = [];
+        isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      isSearching = true;
+    });
+
+    try {
+      final result = await ApiService.searchUsers(UserSession.id, value.trim());
+
+      setState(() {
+        searchResults = result["users"] ?? [];
+        isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        searchResults = [];
+        isSearching = false;
+      });
+    }
+  }
+
+  Future<void> sendRequestFromSearch(String toUserId) async {
+    final result = await ApiService.sendFriendRequest(UserSession.id, toUserId);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result["message"] ?? "Friend request sent")),
+    );
+
+    await searchUsers(searchController.text);
+    await loadFriends();
   }
 
   Future<void> acceptRequest(String requestUserId) async {
@@ -110,6 +155,99 @@ class _FriendsPageState extends State<FriendsPage> {
   void initState() {
     super.initState();
     loadFriends();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Widget buildSearchResultCard(Map user) {
+    final bool isFriend = user["isFriend"] == true;
+    final bool requestSent = user["requestSent"] == true;
+    final bool requestReceived = user["requestReceived"] == true;
+
+    String buttonText = "Add";
+    bool disableButton = false;
+
+    if (isFriend) {
+      buttonText = "Friends";
+      disableButton = true;
+    } else if (requestSent) {
+      buttonText = "Sent";
+      disableButton = true;
+    } else if (requestReceived) {
+      buttonText = "Pending";
+      disableButton = true;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: const Color(0xFF005F89),
+            child: Text(
+              user["name"] != null && user["name"].toString().isNotEmpty
+                  ? user["name"][0].toUpperCase()
+                  : "?",
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user["name"] ?? "",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user["email"] ?? "",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: disableButton
+                ? null
+                : () async {
+                    await sendRequestFromSearch(user["_id"]);
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF005F89),
+            ),
+            child: Text(
+              buttonText,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildUserCard(
@@ -199,6 +337,45 @@ class _FriendsPageState extends State<FriendsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: searchUsers,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: "Search users by name or email...",
+                          icon: Icon(Icons.search),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    if (searchController.text.isNotEmpty) ...[
+                      const Text(
+                        "Search Results",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      if (isSearching)
+                        const Center(child: CircularProgressIndicator())
+                      else if (searchResults.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 20),
+                          child: Text("No users found"),
+                        )
+                      else
+                        Column(
+                          children: searchResults.map((user) {
+                            return buildSearchResultCard(user);
+                          }).toList(),
+                        ),
+                      const SizedBox(height: 10),
+                    ],
                     const Text(
                       "Friend Requests",
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

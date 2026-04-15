@@ -180,6 +180,59 @@ router.get("/home-notifications/:userId", async (req, res) => {
   }
 });
 
+router.get("/search/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const query = (req.query.q || "").trim();
+
+    if (!query) {
+      return res.status(200).json({ users: [] });
+    }
+
+    const currentUser = await User.findById(userId);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const users = await User.find({
+      _id: { $ne: userId },
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { email: { $regex: query, $options: "i" } }
+      ]
+    }).limit(10);
+
+    const results = users.map((user) => {
+      const isFriend = currentUser.friends.some(
+        (friendId) => friendId.toString() === user._id.toString()
+      );
+
+      const requestSent = user.friendRequests.some(
+        (requestId) => requestId.toString() === userId
+      );
+
+      const requestReceived = currentUser.friendRequests.some(
+        (requestId) => requestId.toString() === user._id.toString()
+      );
+
+      return {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isFriend,
+        requestSent,
+        requestReceived
+      };
+    });
+
+    res.status(200).json({ users: results });
+  } catch (error) {
+    console.log("SEARCH USERS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.post("/send-request", async (req, res) => {
   try {
     const { fromUserId, toUserId } = req.body;
@@ -310,70 +363,70 @@ router.post("/reject-request", async (req, res) => {
 });
 
 router.post("/invite-to-event", async (req, res) => {
-    try {
-      const { fromUserId, toUserId, eventId } = req.body;
+  try {
+    const { fromUserId, toUserId, eventId } = req.body;
 
-      if (!fromUserId || !toUserId || !eventId) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-
-      if (fromUserId === toUserId) {
-        return res.status(400).json({ message: "You cannot invite yourself" });
-      }
-
-      const fromUser = await User.findById(fromUserId);
-      const toUser = await User.findById(toUserId);
-      const event = await Event.findById(eventId);
-
-      if (!fromUser || !toUser || !event) {
-        return res.status(404).json({ message: "User or event not found" });
-      }
-
-      const areFriends = fromUser.friends.some(
-        (friendId) => friendId.toString() === toUserId
-      );
-
-      if (!areFriends) {
-        return res.status(400).json({ message: "You can only invite your friends" });
-      }
-
-      const alreadyAttending = event.attendees.some(
-        (attendeeId) => attendeeId.toString() === toUserId
-      );
-
-      if (alreadyAttending) {
-        return res.status(400).json({ message: "This friend is already attending" });
-      }
-
-      if (event.isPrivate && event.createdBy?.toString() !== fromUserId) {
-        return res.status(403).json({
-          message: "Only the event creator can invite friends to a private event"
-        });
-      }
-
-      const alreadyInvitedOnUser = toUser.eventInvites.some(
-        (invite) => invite.eventId.toString() === eventId
-      );
-
-      if (alreadyInvitedOnUser) {
-        return res.status(400).json({ message: "This friend is already invited" });
-      }
-
-      toUser.eventInvites.push({ eventId, fromUserId });
-
-      if (!event.invitedUsers.some((id) => id.toString() === toUserId)) {
-        event.invitedUsers.push(toUserId);
-      }
-
-      await toUser.save();
-      await event.save();
-
-      res.status(200).json({ message: "Invite sent successfully" });
-    } catch (error) {
-      console.log("INVITE TO EVENT ERROR:", error);
-      res.status(500).json({ message: "Server error" });
+    if (!fromUserId || !toUserId || !eventId) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
-  });
+
+    if (fromUserId === toUserId) {
+      return res.status(400).json({ message: "You cannot invite yourself" });
+    }
+
+    const fromUser = await User.findById(fromUserId);
+    const toUser = await User.findById(toUserId);
+    const event = await Event.findById(eventId);
+
+    if (!fromUser || !toUser || !event) {
+      return res.status(404).json({ message: "User or event not found" });
+    }
+
+    const areFriends = fromUser.friends.some(
+      (friendId) => friendId.toString() === toUserId
+    );
+
+    if (!areFriends) {
+      return res.status(400).json({ message: "You can only invite your friends" });
+    }
+
+    const alreadyAttending = event.attendees.some(
+      (attendeeId) => attendeeId.toString() === toUserId
+    );
+
+    if (alreadyAttending) {
+      return res.status(400).json({ message: "This friend is already attending" });
+    }
+
+    if (event.isPrivate && event.createdBy?.toString() !== fromUserId) {
+      return res.status(403).json({
+        message: "Only the event creator can invite friends to a private event"
+      });
+    }
+
+    const alreadyInvitedOnUser = toUser.eventInvites.some(
+      (invite) => invite.eventId.toString() === eventId
+    );
+
+    if (alreadyInvitedOnUser) {
+      return res.status(400).json({ message: "This friend is already invited" });
+    }
+
+    toUser.eventInvites.push({ eventId, fromUserId });
+
+    if (!event.invitedUsers.some((id) => id.toString() === toUserId)) {
+      event.invitedUsers.push(toUserId);
+    }
+
+    await toUser.save();
+    await event.save();
+
+    res.status(200).json({ message: "Invite sent successfully" });
+  } catch (error) {
+    console.log("INVITE TO EVENT ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 router.post("/remove-friend", async (req, res) => {
   try {
