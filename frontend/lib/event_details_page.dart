@@ -19,6 +19,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   bool isLoading = true;
 
   Set<String> sentRequests = {};
+  TextEditingController commentController = TextEditingController();
+  bool isSubmittingComment = false;
 
   String get userId => UserSession.id;
 
@@ -54,6 +56,101 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   void initState() {
     super.initState();
     loadEventDetails();
+  }
+
+  @override
+  void dispose() {
+    commentController.dispose();
+    super.dispose();
+  }
+
+  String formatCommentDate(String dateText) {
+    try {
+      DateTime date = DateTime.parse(dateText).toLocal();
+      return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  Future<void> handleAddComment() async {
+    if (commentController.text.trim().isEmpty || event == null) {
+      return;
+    }
+
+    setState(() {
+      isSubmittingComment = true;
+    });
+
+    try {
+      await EventService.addComment(
+        event!.id,
+        userId,
+        commentController.text.trim(),
+      );
+
+      commentController.clear();
+      await loadEventDetails();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment added')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add comment')),
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      isSubmittingComment = false;
+    });
+  }
+
+  Future<void> handleDeleteComment(String commentId) async {
+    if (event == null) return;
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Comment'),
+        content: const Text('Are you sure you want to delete this comment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await EventService.deleteComment(event!.id, commentId, userId);
+        await loadEventDetails();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Comment deleted')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete comment')),
+        );
+      }
+    }
   }
 
   Future<void> handleRsvp() async {
@@ -481,6 +578,133 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                           ],
                         ],
                       ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Comments',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2D3D),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: commentController,
+                              maxLines: 3,
+                              decoration: const InputDecoration(
+                                hintText: 'Write a comment...',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isSubmittingComment ? null : handleAddComment,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF005F89),
+                                ),
+                                child: isSubmittingComment
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : const Text(
+                                        'Post Comment',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      event!.comments.isEmpty
+                          ? Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Text(
+                                'No comments yet.',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            )
+                          : Column(
+                              children: event!.comments.map((comment) {
+                                return Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              comment.userName,
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            formatCommentDate(comment.createdAt),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          if (comment.userId == UserSession.id)
+                                            IconButton(
+                                              onPressed: () {
+                                                handleDeleteComment(comment.id);
+                                              },
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                                size: 20,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        comment.text,
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                       const SizedBox(height: 28),
                       const Text(
                         'People Going',

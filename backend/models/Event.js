@@ -1,5 +1,26 @@
 const mongoose = require('mongoose');
 
+const commentSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+    },
+    text: {
+      type: String,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
 const eventSchema = new mongoose.Schema(
   {
     title: {
@@ -50,6 +71,7 @@ const eventSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    comments: [commentSchema],
   },
   {
     timestamps: true,

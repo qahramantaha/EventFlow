@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -52,6 +53,7 @@ router.post('/create', fakeAuth, async (req, res) => {
       isPrivate: isPrivate ?? false,
       createdBy: req.user.id,
       attendees: [],
+      comments: [],
     });
 
     await newEvent.save();
@@ -178,9 +180,98 @@ router.get('/:id', fakeAuth, async (req, res) => {
         name: attendee.name,
         email: attendee.email,
       })),
+      comments: (event.comments || []).map((comment) => ({
+        _id: comment._id,
+        userId: comment.userId,
+        userName: comment.userName,
+        text: comment.text,
+        createdAt: comment.createdAt,
+      })),
     });
   } catch (error) {
     console.log('Get event details error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add comment
+router.post('/:id/comments', fakeAuth, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: 'Comment cannot be empty' });
+    }
+
+    const event = await Event.findById(req.params.id);
+    const user = await User.findById(req.user.id);
+
+    if (!event || !user) {
+      return res.status(404).json({ message: 'Event or user not found' });
+    }
+
+    const isCreator = event.createdBy?.toString() === req.user.id;
+    const isInvited = event.invitedUsers?.some(
+      (id) => id.toString() === req.user.id
+    );
+
+    if (event.isPrivate && !isCreator && !isInvited) {
+      return res.status(403).json({ message: 'You do not have access to comment on this private event' });
+    }
+    if (!event.comments) {
+      event.comments = [];
+    }
+    event.comments.push({
+      userId: user._id,
+      userName: user.name,
+      text: text.trim(),
+    });
+
+    await event.save();
+
+    const newComment = event.comments[event.comments.length - 1];
+
+    res.status(201).json({
+      message: 'Comment added successfully',
+      comment: {
+        _id: newComment._id,
+        userId: newComment.userId,
+        userName: newComment.userName,
+        text: newComment.text,
+        createdAt: newComment.createdAt,
+      },
+    });
+  } catch (error) {
+    console.log('Add comment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete comment
+router.delete('/:id/comments/:commentId', fakeAuth, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const comment = event.comments.id(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only delete your own comment' });
+    }
+
+    comment.deleteOne();
+    await event.save();
+
+    res.status(200).json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.log('Delete comment error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

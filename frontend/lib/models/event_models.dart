@@ -18,6 +18,32 @@ class AttendeeModel {
   }
 }
 
+class CommentModel {
+  final String id;
+  final String userId;
+  final String userName;
+  final String text;
+  final String createdAt;
+
+  CommentModel({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.text,
+    required this.createdAt,
+  });
+
+  factory CommentModel.fromJson(Map<String, dynamic> json) {
+    return CommentModel(
+      id: json['_id'] ?? '',
+      userId: json['userId']?.toString() ?? '',
+      userName: json['userName'] ?? '',
+      text: json['text'] ?? '',
+      createdAt: json['createdAt'] ?? '',
+    );
+  }
+}
+
 class EventModel {
   final String id;
   final String title;
@@ -32,6 +58,7 @@ class EventModel {
   final bool isPrivate;
   final String createdBy;
   final List<AttendeeModel> attendees;
+  final List<CommentModel> comments;
 
   EventModel({
     required this.id,
@@ -47,10 +74,12 @@ class EventModel {
     required this.isPrivate,
     required this.createdBy,
     required this.attendees,
+    required this.comments,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
     List attendeeList = json['attendees'] ?? [];
+    List commentList = json['comments'] ?? [];
 
     return EventModel(
       id: json['_id'] ?? '',
@@ -67,6 +96,9 @@ class EventModel {
       createdBy: json['createdBy']?.toString() ?? '',
       attendees: attendeeList
           .map((attendee) => AttendeeModel.fromJson(attendee))
+          .toList(),
+      comments: commentList
+          .map((comment) => CommentModel.fromJson(comment))
           .toList(),
     );
   }

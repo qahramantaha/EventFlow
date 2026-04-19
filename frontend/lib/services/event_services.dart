@@ -180,4 +180,47 @@ class EventService {
       throw Exception('Failed to cancel RSVP: ${response.body}');
     }
   }
+
+  static Future<Map<String, dynamic>> addComment(
+    String eventId,
+    String userId,
+    String text,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/$eventId/comments'),
+      headers: {
+        "Content-Type": "application/json",
+        "userId": userId,
+      },
+      body: jsonEncode({
+        "text": text,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to add comment: ${response.body}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteComment(
+    String eventId,
+    String commentId,
+    String userId,
+  ) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$eventId/comments/$commentId'),
+      headers: {
+        "Content-Type": "application/json",
+        "userId": userId,
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to delete comment: ${response.body}');
+    }
+  }
 }
