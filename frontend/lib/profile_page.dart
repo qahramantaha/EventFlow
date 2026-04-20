@@ -48,16 +48,12 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadProfile() async {
-    print("UserSession.email: ${UserSession.email}");
-
     if (UserSession.email.isEmpty) {
-      print("UserSession.email is empty");
       return;
     }
 
     try {
       final result = await ApiService.getProfile(UserSession.email);
-      print("Profile API result: $result");
 
       if (!mounted) return;
 
@@ -76,9 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
         descriptionController.text = description;
         nameController.text = name;
       });
-    } catch (e) {
-      print("Load profile error: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> saveProfile() async {
@@ -232,8 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           },
                           child: Text(isEditing ? "Save" : "Edit"),
                         ),
-                        if (isEditing)
-                          const SizedBox(width: 10),
+                        if (isEditing) const SizedBox(width: 10),
                         if (isEditing)
                           ElevatedButton(
                             onPressed: () {
@@ -277,8 +270,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       builder: (context) {
                         return AlertDialog(
                           title: const Text("Logout"),
-                          content: const Text(
-                              "Are you sure you want to log out?"),
+                          content: const Text("Are you sure you want to log out?"),
                           actions: [
                             TextButton(
                               onPressed: () {
@@ -293,8 +285,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 UserSession.id = "";
 
                                 Navigator.pop(context);
-                                Navigator.pushReplacementNamed(
-                                    context, '/login');
+                                Navigator.pushReplacementNamed(context, '/login');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,

@@ -132,7 +132,7 @@ class _ChatPageState extends State<ChatPage> {
                 : messages.isEmpty
                     ? const Center(
                         child: Text(
-                          "No messages yet",
+                          "No messages yet.",
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       )

@@ -349,7 +349,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         onChanged: searchUsers,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          hintText: "Search users by name or email...",
+                          hintText: "Search users",
                           icon: Icon(Icons.search),
                         ),
                       ),
@@ -357,7 +357,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     const SizedBox(height: 14),
                     if (searchController.text.isNotEmpty) ...[
                       const Text(
-                        "Search Results",
+                        "Results",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),

@@ -152,7 +152,7 @@ router.put("/mark-read", async (req, res) => {
       }
     );
 
-    res.status(200).json({ message: "Messages marked as read" });
+    res.status(200).json({ message: "marked as read" });
   } catch (error) {
     console.log("MARK READ ERROR:", error);
     res.status(500).json({ message: "Server error" });

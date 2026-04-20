@@ -400,7 +400,7 @@ router.post("/invite-to-event", async (req, res) => {
 
     if (event.isPrivate && event.createdBy?.toString() !== fromUserId) {
       return res.status(403).json({
-        message: "Only the event creator can invite friends to a private event"
+        message: "Only the creator can invite people to a private event"
       });
     }
 

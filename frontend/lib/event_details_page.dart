@@ -95,13 +95,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comment added')),
+        const SnackBar(content: Text('Comment posted')),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add comment')),
+        const SnackBar(content: Text('Could not add comment')),
       );
     }
 
@@ -147,7 +147,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete comment')),
+          const SnackBar(content: Text('Could not delete comment')),
         );
       }
     }
@@ -255,7 +255,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to delete event')),
+          const SnackBar(content: Text('Could not delete event')),
         );
       }
     }
@@ -302,7 +302,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                event!.isPrivate ? "Invite Friends to Private Event" : "Invite Friends",
+                event!.isPrivate ? "Invite Friends" : "Invite Friends",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -336,7 +336,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(result["message"] ?? "Invite sent!"),
+                          content: Text(result["message"] ?? "Invite sent"),
                         ),
                       );
                     },
@@ -382,7 +382,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : event == null
-              ? const Center(child: Text('Failed to load event'))
+              ? const Center(child: Text('Could not load event'))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(

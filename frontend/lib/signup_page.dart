@@ -56,7 +56,7 @@ class SignupPage extends StatelessWidget {
                   if (errorMsg.startsWith("Exception: ")) {
                     errorMsg = errorMsg.substring(11);
                   }
-                  print("Signup error caught: $e");
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(errorMsg)),
                   );

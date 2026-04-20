@@ -59,7 +59,7 @@ class _EventsPageState extends State<EventsPage> {
 
     if (selectedFilter == 'Going') {
       result = result.where((event) => event.isGoing).toList();
-    } else if (selectedFilter == 'Created By Me') {
+    } else if (selectedFilter == 'My Events') {
       result = result.where((event) {
         return event.createdBy == UserSession.id;
       }).toList();

@@ -118,7 +118,7 @@ class ApiService {
     String query,
   ) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/search/$userId?q=$query"),
+      Uri.parse("$baseUrl/search/$userId?q=${Uri.encodeComponent(query)}"),
       headers: {"Content-Type": "application/json"},
     );
 

@@ -31,7 +31,6 @@ const userSchema = new mongoose.Schema(
         ref: "User"
       }
     ],
-    // Event invites from friends
     eventInvites: [
       {
         eventId: {

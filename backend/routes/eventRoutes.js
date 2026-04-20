@@ -16,7 +16,6 @@ const fakeAuth = (req, res, next) => {
   next();
 };
 
-// Create event
 router.post('/create', fakeAuth, async (req, res) => {
   try {
     const {
@@ -68,7 +67,6 @@ router.post('/create', fakeAuth, async (req, res) => {
   }
 });
 
-// Get all events
 router.get('/', fakeAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -109,7 +107,6 @@ router.get('/', fakeAuth, async (req, res) => {
   }
 });
 
-// Get events user is going to
 router.get('/my-events', fakeAuth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -138,7 +135,6 @@ router.get('/my-events', fakeAuth, async (req, res) => {
   }
 });
 
-// Get one event
 router.get('/:id', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).populate('attendees', 'name email');
@@ -155,7 +151,7 @@ router.get('/:id', fakeAuth, async (req, res) => {
     );
 
     if (event.isPrivate && !isCreator && !isInvited) {
-      return res.status(403).json({ message: 'You do not have access to this private event' });
+      return res.status(403).json({ message: 'You cannot view this private event' });
     }
 
     const isGoing = event.attendees.some(
@@ -194,7 +190,6 @@ router.get('/:id', fakeAuth, async (req, res) => {
   }
 });
 
-// Add comment
 router.post('/:id/comments', fakeAuth, async (req, res) => {
   try {
     const { text } = req.body;
@@ -216,11 +211,13 @@ router.post('/:id/comments', fakeAuth, async (req, res) => {
     );
 
     if (event.isPrivate && !isCreator && !isInvited) {
-      return res.status(403).json({ message: 'You do not have access to comment on this private event' });
+      return res.status(403).json({ message: 'You cannot comment on this private event' });
     }
+
     if (!event.comments) {
       event.comments = [];
     }
+
     event.comments.push({
       userId: user._id,
       userName: user.name,
@@ -247,7 +244,6 @@ router.post('/:id/comments', fakeAuth, async (req, res) => {
   }
 });
 
-// Delete comment
 router.delete('/:id/comments/:commentId', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -276,7 +272,6 @@ router.delete('/:id/comments/:commentId', fakeAuth, async (req, res) => {
   }
 });
 
-// Update event
 router.put('/:id', fakeAuth, async (req, res) => {
   try {
     const {
@@ -321,7 +316,6 @@ router.put('/:id', fakeAuth, async (req, res) => {
   }
 });
 
-// Delete event
 router.delete('/:id', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -343,7 +337,6 @@ router.delete('/:id', fakeAuth, async (req, res) => {
   }
 });
 
-// RSVP to event
 router.post('/:id/rsvp', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -359,7 +352,7 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
     );
 
     if (alreadyGoing) {
-      return res.status(400).json({ message: 'User already RSVP\'d' });
+      return res.status(400).json({ message: 'User already RSVPd' });
     }
 
     event.attendees.push(new mongoose.Types.ObjectId(userId));
@@ -376,7 +369,6 @@ router.post('/:id/rsvp', fakeAuth, async (req, res) => {
   }
 });
 
-// Cancel RSVP
 router.post('/:id/cancel-rsvp', fakeAuth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);

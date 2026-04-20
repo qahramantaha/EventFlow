@@ -62,7 +62,6 @@ class _HomePageState extends State<HomePage> {
     return Colors.blue;
   }
 
-  // Navigate based on notification type
   void handleNotificationTap(String type, String? eventId) {
     final mainPage = context.findAncestorStateOfType<MainPageState>();
     if (type == "message") {
@@ -114,7 +113,7 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        "My Events: $goingEventsCount",
+                        "Going Events: $goingEventsCount",
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -130,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        "Notifications: ${notifications.length} update${notifications.length == 1 ? "" : "s"}",
+                        "Notifications: ${notifications.length}",
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -182,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Text(
-                                    "You're all caught up.",
+                                    "No notifications right now",
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 )
@@ -191,7 +190,6 @@ class _HomePageState extends State<HomePage> {
                                     final type = notification["type"];
                                     final eventId = notification["eventId"]?.toString();
 
-                                    // Show event list for event notifications
                                     if (type == "event" && myEvents.isNotEmpty) {
                                       return Column(
                                         children: [
@@ -226,7 +224,6 @@ class _HomePageState extends State<HomePage> {
                                               ],
                                             ),
                                           ),
-                                          // Show each event
                                           ...myEvents.map((event) {
                                             return GestureDetector(
                                               onTap: () {
@@ -297,7 +294,6 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }
 
-                                    // Event invite notification tile
                                     if (type == "event_invite") {
                                       return GestureDetector(
                                         onTap: () => handleNotificationTap(type, eventId),
@@ -343,7 +339,6 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }
 
-                                    // Default notification tile
                                     return GestureDetector(
                                       onTap: () => handleNotificationTap(type, null),
                                       child: Container(

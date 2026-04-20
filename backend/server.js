@@ -11,9 +11,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use("/api/users", userRoutes);
-app.use('/api/messages', messageRoutes);
-
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -25,12 +22,12 @@ mongoose
   });
 
 app.get('/test-server', (req, res) => {
-  console.log('TEST SERVER HIT');
-  res.json({ message: 'THIS IS MY REAL BACKEND' });
+  res.json({ message: 'Backend is working' });
 });
 
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.listen(5000, () => {
   console.log('Server running on port 5000');
