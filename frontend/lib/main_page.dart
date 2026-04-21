@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'events_page.dart';
+import 'map_page.dart';
 import 'friends_page.dart';
 import 'profile_page.dart';
 import 'api_service.dart';
@@ -20,6 +21,7 @@ class MainPageState extends State<MainPage> {
   final List<Widget> pages = [
     const HomePage(),
     const EventsPage(),
+    const MapPage(),
     const FriendsPage(),
     const ProfilePage(),
   ];
@@ -29,7 +31,7 @@ class MainPageState extends State<MainPage> {
       selectedIndex = index;
     });
 
-    if (index == 2) {
+    if (index == 3) {
       loadUnreadCount();
     }
   }
@@ -106,6 +108,10 @@ class MainPageState extends State<MainPage> {
           const BottomNavigationBarItem(
             icon: Icon(Icons.event),
             label: "Events",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: "Map",
           ),
           BottomNavigationBarItem(
             icon: buildFriendsIcon(),
