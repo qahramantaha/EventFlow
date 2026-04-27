@@ -109,8 +109,95 @@ class _MapPageState extends State<MapPage> {
   );
 }
 
+int currentStyleIndex = 0;
+bool showStyleOptions = false;
+
+final List<String> mapStyles = [
+  MapboxStyles.MAPBOX_STREETS,     
+  MapboxStyles.DARK,                
+  MapboxStyles.SATELLITE_STREETS, 
+];
+
+final List<IconData> styleIcons = [
+  Icons.light_mode,
+  Icons.dark_mode,
+  Icons.satellite,
+];
+
+void cycleMapStyle() async {
+  if (mapboxMap == null) return;
+
+  setState(() {
+    currentStyleIndex = (currentStyleIndex + 1) % mapStyles.length;
+  });
+
+  await mapboxMap!.loadStyleURI(mapStyles[currentStyleIndex]);
+}
+
+Widget mapStylePanel() {
+  return Positioned(
+    top: 100,
+    left: 20,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        FloatingActionButton(
+          mini: true,
+          onPressed: () {
+            setState(() {
+              showStyleOptions = !showStyleOptions;
+            });
+          },
+          child: const Icon(Icons.layers),
+        ),
+
+        const SizedBox(height: 8),
+
+        if (showStyleOptions)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _styleOption("Light", MapboxStyles.MAPBOX_STREETS, Icons.light_mode),
+                _styleOption("Dark", MapboxStyles.DARK, Icons.dark_mode),
+                _styleOption("Satellite", MapboxStyles.SATELLITE_STREETS, Icons.satellite),
+              ],
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+Widget _styleOption(String label, String style, IconData icon) {
+  return TextButton.icon(
+    onPressed: () async {
+      if (mapboxMap == null) return;
+
+      await mapboxMap!.loadStyleURI(style);
+
+      setState(() {
+        showStyleOptions = false; 
+      });
+    },
+    icon: Icon(icon, size: 18),
+    label: Text(label),
+  );
+}
   Future<void> _onMapCreated(MapboxMap map) async {
     mapboxMap = map;
+
+    await mapboxMap!.loadStyleURI(mapStyles[currentStyleIndex]);
 
     mapboxMap!.setCamera(
       CameraOptions(
@@ -304,6 +391,7 @@ class _MapPageState extends State<MapPage> {
           MapWidget(
             onMapCreated: _onMapCreated,
           ),
+          mapStylePanel(),
           mapLegend(),
           eventDetailsCard(),
         ],
