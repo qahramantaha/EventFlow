@@ -55,6 +55,59 @@ class _MapPageState extends State<MapPage> {
       return 0xFFE53935; 
   }
 }
+  Widget mapLegend() {
+  return Positioned(
+    top: 20,
+    right: 16,
+    child: Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            "Legend",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 6),
+
+          Row(
+            children: [
+              Icon(Icons.circle, color: Color(0xFF4CAF50), size: 12),
+              SizedBox(width: 6),
+              Text("Sports"),
+            ],
+          ),
+
+          Row(
+            children: [
+              Icon(Icons.circle, color: Color(0xFF2196F3), size: 12),
+              SizedBox(width: 6),
+              Text("Academic"),
+            ],
+          ),
+
+          Row(
+            children: [
+              Icon(Icons.circle, color: Color(0xFF9C27B0), size: 12),
+              SizedBox(width: 6),
+              Text("Social"),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Future<void> _onMapCreated(MapboxMap map) async {
     mapboxMap = map;
@@ -251,6 +304,7 @@ class _MapPageState extends State<MapPage> {
           MapWidget(
             onMapCreated: _onMapCreated,
           ),
+          mapLegend(),
           eventDetailsCard(),
         ],
       ),
