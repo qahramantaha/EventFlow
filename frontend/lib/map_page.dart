@@ -179,6 +179,53 @@ Widget mapStylePanel() {
   );
 }
 
+String selectedCategoryFilter = "All";
+
+final List<String> categoryFilters = [
+  "All",
+  "Sports",
+  "Academic",
+  "Social",
+];
+
+Widget filterMenuButton() {
+  return Positioned(
+    top: 20,
+    left: 16,
+    child: PopupMenuButton<String>(
+      icon: const Icon(Icons.filter_list),
+      onSelected: (value) async {
+        setState(() {
+          selectedCategoryFilter = value;
+        });
+
+        await addEventPins();
+      },
+      itemBuilder: (context) => [
+        _filterItem("All"),
+        _filterItem("Sports"),
+        _filterItem("Academic"),
+        _filterItem("Social"),
+      ],
+    ),
+  );
+}
+
+PopupMenuItem<String> _filterItem(String value) {
+  return PopupMenuItem(
+    value: value,
+    child: Row(
+      children: [
+        if (selectedCategoryFilter == value)
+          const Icon(Icons.check, size: 18),
+        if (selectedCategoryFilter == value)
+          const SizedBox(width: 6),
+        Text(value),
+      ],
+    ),
+  );
+}
+
 Widget _styleOption(String label, String style, IconData icon) {
   return TextButton.icon(
     onPressed: () async {
@@ -193,6 +240,7 @@ Widget _styleOption(String label, String style, IconData icon) {
     icon: Icon(icon, size: 18),
     label: Text(label),
   );
+  
 }
   Future<void> _onMapCreated(MapboxMap map) async {
     mapboxMap = map;
@@ -294,6 +342,10 @@ Widget _styleOption(String label, String style, IconData icon) {
     annotationEvents.clear();
 
     for (final event in events) {
+      if (selectedCategoryFilter != "All" &&
+        event.category.toLowerCase() != selectedCategoryFilter.toLowerCase()) {
+      continue;
+}
       final point = await getPointFromLocation(event.location);
 
       if (point == null) {
@@ -394,6 +446,7 @@ Widget _styleOption(String label, String style, IconData icon) {
           mapStylePanel(),
           mapLegend(),
           eventDetailsCard(),
+          filterMenuButton(),
         ],
       ),
     );
