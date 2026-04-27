@@ -7,6 +7,8 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'models/event_models.dart';
 import 'services/event_services.dart';
 import 'user_session.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'event_details_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,6 +25,23 @@ class _MapPageState extends State<MapPage> {
   final Map<String, EventModel> annotationEvents = {};
 
   EventModel? selectedEvent;
+
+  Future<void> openRouteToEvent(EventModel event) async {
+  final encodedLocation = Uri.encodeComponent(event.location);
+
+  final Uri url = Uri.parse(
+    'https://www.google.com/maps/dir/?api=1&destination=$encodedLocation',
+  );
+
+  if (await canLaunchUrl(url)) {
+    await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    );
+  } else {
+    debugPrint('Could not open maps');
+  }
+}
 
   Future<void> _onMapCreated(MapboxMap map) async {
     mapboxMap = map;
@@ -49,7 +68,6 @@ class _MapPageState extends State<MapPage> {
       ),
     );
 
-    // ✅ FIXED: use await instead of .then()
     circleAnnotationManager =
         await mapboxMap!.annotations.createCircleAnnotationManager();
 
@@ -61,7 +79,7 @@ class _MapPageState extends State<MapPage> {
       },
     );
 
-    await loadEvents(); // ✅ important
+    await loadEvents();
   }
 
   Future<void> loadEvents() async {
@@ -71,13 +89,12 @@ class _MapPageState extends State<MapPage> {
       events.clear();
       events.addAll(loadedEvents);
 
-      // ✅ DEBUG
       debugPrint('Loaded events: ${events.length}');
       for (final event in events) {
         debugPrint('Event: ${event.title} | Location: ${event.location}');
       }
 
-      await addEventPins(); // ✅ important
+      await addEventPins(); 
     } catch (e) {
       debugPrint('Failed to load events: $e');
     }
@@ -95,7 +112,6 @@ class _MapPageState extends State<MapPage> {
 
     final response = await http.get(url);
 
-    // ✅ DEBUG
     debugPrint('Geocoding: $location');
     debugPrint('Status: ${response.statusCode}');
     debugPrint('Body: ${response.body}');
@@ -128,7 +144,7 @@ class _MapPageState extends State<MapPage> {
       final point = await getPointFromLocation(event.location);
 
       if (point == null) {
-        debugPrint('❌ Could not find location: ${event.location}');
+        debugPrint('Could not find location: ${event.location}');
         continue;
       }
 
@@ -176,16 +192,32 @@ class _MapPageState extends State<MapPage> {
               Text(selectedEvent!.location),
               const SizedBox(height: 6),
               Text(selectedEvent!.description),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      selectedEvent = null;
-                    });
-                  },
-                  child: const Text('Close'),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventDetailsPage(
+                            eventId: selectedEvent!.id,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Open Event'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedEvent = null;
+                      });
+                    },
+                    child: const Text('Close'),
+                  ),
+                ],
               ),
             ],
           ),
