@@ -37,9 +37,22 @@ class _MapPageState extends State<MapPage> {
     await launchUrl(
       url,
       mode: LaunchMode.externalApplication,
-    );
-  } else {
-    debugPrint('Could not open maps');
+      );
+    } else {
+      debugPrint('Could not open maps');
+    } 
+  }
+
+  int getColorForCategory(String category) {
+  switch (category.toLowerCase()) {
+    case 'sports':
+      return 0xFF4CAF50; 
+    case 'academic':
+      return 0xFF2196F3;
+    case 'social':
+      return 0xFF9C27B0; 
+    default:
+      return 0xFFE53935; 
   }
 }
 
@@ -152,7 +165,7 @@ class _MapPageState extends State<MapPage> {
         CircleAnnotationOptions(
           geometry: point,
           circleRadius: 9.0,
-          circleColor: 0xFFE53935,
+          circleColor: getColorForCategory(event.category),
           circleStrokeWidth: 2.0,
           circleStrokeColor: 0xFFFFFFFF,
         ),
